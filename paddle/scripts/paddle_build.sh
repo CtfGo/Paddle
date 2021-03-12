@@ -1238,6 +1238,9 @@ set +x
         exec_retry_threshold=10
         is_retry_execuate=0
         if [ -n "$failed_test_lists" ];then
+            if [ ${TIMEOUT_DEBUG_HELP:-OFF} == "ON" ];then
+                bash $PADDLE_ROOT/tools/timeout_debug_help.sh "$failed_test_lists"    # cat logs for tiemout uts which killed by ctest
+            fi
             read need_retry_ut_str <<< $(echo "$failed_test_lists" | grep -oEi "\-.+\(.+\)" | sed 's/(.\+)//' | sed 's/- //' )
             need_retry_ut_arr=(${need_retry_ut_str})
             need_retry_ut_count=${#need_retry_ut_arr[@]}
@@ -1251,7 +1254,7 @@ set +x
                         echo "This is the ${exec_time_array[$exec_times]} time to re-run"
                         echo "========================================="
                         echo "The following unittest will be re-run:"
-                        echo "${failed_test_lists_ult}"
+                        echo "${retry_unittests}"
                             
                         for line in ${retry_unittests[@]} ;
                             do
@@ -1340,7 +1343,7 @@ function show_ut_retry_result() {
             echo "Summary Failed Tests... "
             echo "========================================"
             echo "The following tests FAILED: "
-            echo "${retry_unittests_record}" | grep -E "$failed_ut_re"
+            echo "${retry_unittests_record}" | sort -u | grep -E "$failed_ut_re"
             exit 8;
         fi
     fi
