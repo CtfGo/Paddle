@@ -32,54 +32,6 @@ Operand UnaryOp(Opcode unop, Operand x) {
 std::pair<Operand, Operand> AddBroadCastForeOp(
     Operand x, Operand y, const std::vector<int64_t>& broadcast_dimensions) {
   return {x, y};
-  /*
-      const int64_t lhs_rank = lhs_shape->rank();
-      const int64_t rhs_rank = rhs_shape->rank();
-
-      Operand updated_lhs = lhs;
-      Operand updated_rhs = rhs;
-      if (!broadcast_dimensions.empty() && lhs_rank != rhs_rank) {
-        const bool should_broadcast_lhs = lhs_rank < rhs_rank;
-        Operand from = should_broadcast_lhs ? lhs : rhs;
-        const Shape& from_shape = should_broadcast_lhs ? *lhs_shape :
-     *rhs_shape;
-
-        std::vector<int64> to_size;
-        std::vector<bool> to_size_is_dynamic;
-        for (int i = 0; i < shape.rank(); i++) {
-          to_size.push_back(shape.dimensions(i));
-          to_size_is_dynamic.push_back(shape.is_dynamic_dimension(i));
-        }
-        for (int64_t from_dim = 0; from_dim < from_shape.rank(); from_dim++) {
-          int64_t to_dim = broadcast_dimensions[from_dim];
-          to_size[to_dim] = from_shape.dimensions(from_dim);
-          to_size_is_dynamic[to_dim] =
-     from_shape.is_dynamic_dimension(from_dim);
-        }
-
-        const Shape& broadcasted_shape = ShapeUtil::MakeShape(
-            from_shape.element_type(), to_size, to_size_is_dynamic);
-        TF_ASSIGN_OR_RETURN(
-            Operand broadcasted_operand,
-            InDimBroadcast(broadcasted_shape, from, broadcast_dimensions));
-
-        updated_lhs = should_broadcast_lhs ? broadcasted_operand : lhs;
-        updated_rhs = !should_broadcast_lhs ? broadcasted_operand : rhs;
-      }
-
-      TF_ASSIGN_OR_RETURN(const Shape* updated_lhs_shape,
-                          GetShapePtr(updated_lhs));
-      if (!ShapeUtil::SameDimensions(shape, *updated_lhs_shape)) {
-        TF_ASSIGN_OR_RETURN(updated_lhs,
-                            AddBroadcastSequence(shape, updated_lhs));
-      }
-      TF_ASSIGN_OR_RETURN(const Shape* updated_rhs_shape,
-                          GetShapePtr(updated_rhs));
-      if (!ShapeUtil::SameDimensions(shape, *updated_rhs_shape)) {
-        TF_ASSIGN_OR_RETURN(updated_rhs,
-                            AddBroadcastSequence(shape, updated_rhs));
-      }
-      */
 }
 
 Operand BinaryOp(Opcode binop, Operand x, Operand y,
