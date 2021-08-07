@@ -15,11 +15,37 @@ limitations under the License. */
 // #include "paddle/fluid/compiler/piano/shape.h"
 // #include "paddle/fluid/compiler/piano/shape_inference.h"
 #include "paddle/fluid/compiler/piano/meta_op.h"
+#include <numeric>
 #include "paddle/fluid/compiler/piano/meta_op_util.h"
-#include "paddle/fluid/compiler/piano/note_builder.h"
 
 namespace paddle {
 namespace piano {
+
+Operand Broadcast(Operand x, const DimensionArray& out_dimensions,
+                  const DimensionArray& dimensions_alignment = {}) {
+  DimensionArray right_alignment;
+  if (dimensions_alignment.empty()) {
+    PADDLE_ENFORCE_LE(x.Shape().Rank(), out_dimensions.size(),
+                      platform::errors::InvalidArgument(
+                          "Rank of operand should be less than output"));
+    right_alignment.resize(x.Shape().Rank());
+    std::itoa(right_alignment.begin(), right_alignment.end(), 0);
+    auto gap_len = out_dimensions.size() - x.Shape().Rank();
+    right_alignment[i] = i + gap_len;
+  }
+
+  auto&& result_shape = InferBroadcastShape(
+      x.Shape(), out_dimensions,
+      dimensions_alignment.empty() ? right_alignment : dimensions_alignment);
+  InstructionProto instr;
+  *instr.mutable_shape() = result_shape.ToProto();
+  // TODO(CtfGo): add dimensions_alignment to the instruction as an attribute
+  // after note ir ready.
+  // for (auto&& dim : dimensions_alignment) {
+  //   instr.add_dimensions(dim);
+  // }
+  return AddInstruction(std::move(instr), HloOpcode::kBroadcast, {x});
+}
 
 Operand operator-(Operand x) { return Neg(x); }
 Operand operator+(Operand x, Operand y) { return Add(x, y); }
