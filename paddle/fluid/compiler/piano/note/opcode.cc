@@ -24,7 +24,7 @@ namespace note {
 
 OpCode GetOpCode(const std::string& op_name) {
   static std::unordered_map<std::string, OpCode> op_map = {
-#define HANDLE_MAP(enum_id, op_name, ...) {op_name, OpCode::enum_id},
+#define HANDLE_MAP(enum_id, op_name, ...) {op_name, OpCode::k##enum_id},
       OPCODE_HANDLER(HANDLE_MAP)
 #undef HANDLE_MAP
   };
@@ -54,7 +54,7 @@ const std::string& GetOpName(OpCode code) {
 int GetOpParamNum(OpCode code) {
   switch (code) {
 #define HANDLE_CASE(enum_id, op_name, param_num, ...) \
-  case OpCode::enum_id:                               \
+  case OpCode::k##enum_id:                            \
     return param_num;
     OPCODE_HANDLER(HANDLE_CASE)
 #undef HANDLE_CASE

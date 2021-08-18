@@ -31,10 +31,12 @@ TEST(Opcode, SingleOp) {
 
 TEST(Opcode, PrintOpCode) {
   const OpCode codes[] = {
-#define HANDLE_CODE(enum_id, op_name, ...) OpCode::enum_id,
+#define HANDLE_CODE(enum_id, op_name, ...) OpCode::k##enum_id,
       OPCODE_HANDLER(HANDLE_CODE)
 #undef HANDLE_CODE
   };
+
+  auto a = std::make_unique<int>(10);
 
   for (auto op : codes) {
     auto&& op_name = GetOpName(op);
