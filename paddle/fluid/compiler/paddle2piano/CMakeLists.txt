@@ -1,0 +1,2 @@
+cc_library(piano_compile_pass SRCS piano_compile_pass.cc DEPS pass subgraph_detector)
+cc_test(piano_compile_pass_test SRCS piano_compile_pass_tester.cc DEPS piano_compile_pass)

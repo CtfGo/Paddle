@@ -237,6 +237,13 @@ struct Layers {
     return binary_op("elementwise_mul", x, y, out, attrs);
   }
 
+  // NOTE(levi): A fake elementwise op that will never be compile-supported is
+  // required in piano_compile_pass_tester.
+  VarDesc* elementwise_fake(VarDesc* x, VarDesc* y, VarDesc* out = nullptr,
+                            const AttributeMap* attrs = nullptr) {
+    return binary_op("elementwise_fake", x, y, out, attrs);
+  }
+
   VarDesc* dropout(VarDesc* x, float dropout_prob,
                    std::string dropout_implementation) {
     VarDesc* out = lod_tensor(unique_name());
