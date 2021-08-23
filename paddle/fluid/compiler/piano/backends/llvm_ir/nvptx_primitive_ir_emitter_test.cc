@@ -41,7 +41,7 @@ TEST(NvptxPrimitiveIrEmitter, DeviceBaseOp) {
   ASSERT_NE(nvptx_primitive_ir_emitter.BlockIdx(&builder), nullptr);
   ASSERT_NE(nvptx_primitive_ir_emitter.BlockIdy(&builder), nullptr);
   ASSERT_NE(nvptx_primitive_ir_emitter.BlockIdz(&builder), nullptr);
-  ASSERT_EQ(nvptx_primitive_ir_emitter.Alloca(nullptr, 0), nullptr);
+  ASSERT_EQ(nvptx_primitive_ir_emitter.Alloca(&builder, 0), nullptr);
 }
 
 }  // namespace backends

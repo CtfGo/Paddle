@@ -13,28 +13,22 @@
 // limitations under the License.
 #pragma once
 
-#include "paddle/fluid/compiler/piano/backends/llvm_ir/gpu_ir_emitter.h"
+#include "paddle/fluid/compiler/piano/backends/llvm_ir/llvm_compiler.h"
 
 namespace paddle {
 namespace piano {
 namespace backends {
 
-// NvptxIrEmitter is used for note::Instruction's implementation with cudnn and
-// cublas.
+// NvptxCompiler compile llvm ir to executable binary code for nvidia gpu.
 
-class NvptxIrEmitter : public GpuIrEmitter {
+class NvptxCompiler : public LlvmCompiler {
  public:
-  NvptxIrEmitter() = delete;
-  explicit NvptxIrEmitter(llvm::Module* llvm_module,
-                          KernelExecutableMap* kernel_executable_map)
-      : GpuIrEmitter(llvm_module, kernel_executable_map) {}
-  ~NvptxIrEmitter() {}
+  NvptxCompiler() = default;
+  ~NvptxCompiler() {}
 
-  void VisitBatchNormGrad(const note::Instruction&) override;
-  void VisitBatchNormInference(const note::Instruction&) override;
-  void VisitBatchNormTraining(const note::Instruction&) override;
-  void VisitConvolution(const note::Instruction&) override;
-  void VisitDot(const note::Instruction&) override;
+ protected:
+  void Optimize(note::Module*) override;
+  void Compile(llvm::Module*, KernelExecutableMap*) override;
 };
 
 }  // namespace backends

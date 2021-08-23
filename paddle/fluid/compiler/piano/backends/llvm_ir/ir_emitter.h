@@ -14,32 +14,37 @@
 #pragma once
 
 #include "llvm/IR/Module.h"
+#include "paddle/fluid/compiler/piano/backends/kernel_executable.h"
 #include "paddle/fluid/compiler/piano/backends/note_visitor_base.h"
-#include "paddle/fluid/compiler/piano/backends/schedule_wrapper.h"
 
 namespace paddle {
 namespace piano {
 namespace backends {
 
-// IrEmitter is an Abstract base class for translating note::Instruction to llvm
-// IR.
-// To translating note::Instruction to llvm IR for special device, it should
-// inherit from IrEmitter and overwrite the virtual function.
-// note::Instruction has different type {Scalar Op, Api Op, Unary Op, Binary Op,
-// Others}
-// Elementwise-Unary Op and Elementwise-Binary Op should be implemented
-// in VisitElementwiseUnary and VisitElementwiseBinary.
+// IrEmitter is an  abstract base class for generatting LLVM IR of each
+// note::Instruction
+// For a special hardware, a XXXIrEmitter should be implemented inheriting from
+// IrEmitter and overwrites all the virtual functions.
+// llvm::Module* -> contain kernel llvm IR
+// KernelExecutableMap -> a map of KernelExecutable
+// XXXIrEmitter get a llvm::Module* and KernelExecutors* from XXXCompiler when
+// initialize.
+// note::Instruction accept a IrEmitter and choose VisitXXX by note::OpCode
+// Each time VisitXXX will translate one note::Instruction with type OpCode::XXX
+// into a kernel with llvm IR.
 
 class IrEmitter : public NoteVisitorBase {
  public:
   IrEmitter() = delete;
-  explicit IrEmitter(llvm::Module* llvm_module, Schedules* schedule)
-      : llvm_module_(llvm_module), schedules_(schedule) {}
+  explicit IrEmitter(llvm::Module* llvm_module,
+                     KernelExecutableMap* kernel_executable_map)
+      : llvm_module_(llvm_module),
+        kernel_executable_map_(kernel_executable_map) {}
   virtual ~IrEmitter() {}
 
-  // ElementwiseUnary Operator
+  // Elementwise-Unary implemented in VisitElementwiseUnary
   virtual void VisitElementwiseUnary(const note::Instruction&) = 0;
-  // ElementwiseBinary Operator
+  // Elementwise-Unary implemented in VisitElementwiseBinary
   virtual void VisitElementwiseBinary(const note::Instruction&) = 0;
 
   // Scalar op
@@ -91,7 +96,7 @@ class IrEmitter : public NoteVisitorBase {
 
  protected:
   llvm::Module* llvm_module_{nullptr};
-  Schedules* schedules_{nullptr};
+  KernelExecutableMap* kernel_executable_map_{nullptr};
 };
 
 }  // namespace backends

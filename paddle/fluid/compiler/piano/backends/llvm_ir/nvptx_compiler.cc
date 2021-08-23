@@ -11,21 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
 
-#include <memory>
-#include <vector>
+#include "paddle/fluid/compiler/piano/backends/llvm_ir/nvptx_compiler.h"
+#include "llvm/Support/TargetSelect.h"
 
 namespace paddle {
 namespace piano {
 namespace backends {
 
-class ScheduleWrapper {
- public:
- protected:
-};
-
-using Schedules = std::vector<std::unique_ptr<ScheduleWrapper>>;
+void NvptxCompiler::Optimize(note::Module* note_module) {}
+void NvptxCompiler::Compile(llvm::Module* llvm_module,
+                            KernelExecutableMap* kernel_executable_map) {}
 
 }  // namespace backends
 }  // namespace piano
