@@ -12,10 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "paddle/fluid/compiler/piano/meta_op_util.h"
+#include "paddle/fluid/compiler/piano/symbolization/common.h"
 #include "paddle/fluid/compiler/piano/note/note.pb.h"
-#include "paddle/fluid/compiler/piano/note_builder.h"
-#include "paddle/fluid/compiler/piano/shape_inference.h"
+#include "paddle/fluid/compiler/piano/symbolization/note_builder.h"
+#include "paddle/fluid/compiler/piano/symbolization/shape_inference.h"
 #include "paddle/fluid/platform/enforce.h"
 #include "paddle/fluid/platform/errors.h"
 

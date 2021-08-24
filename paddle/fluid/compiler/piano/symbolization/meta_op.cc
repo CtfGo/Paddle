@@ -14,12 +14,21 @@ limitations under the License. */
 
 // #include "paddle/fluid/compiler/piano/shape.h"
 // #include "paddle/fluid/compiler/piano/shape_inference.h"
-#include "paddle/fluid/compiler/piano/meta_op.h"
+#include "paddle/fluid/compiler/piano/symbolization/meta_op.h"
 #include <numeric>
-#include "paddle/fluid/compiler/piano/meta_op_util.h"
+#include "paddle/fluid/compiler/piano/symbolization/common.h"
 
 namespace paddle {
 namespace piano {
+
+Operand Parameter(NoteBuilder* builder, int64_t parameter_number,
+                  const Shape& shape, const string& name) {}
+
+template <typename ElementT>
+Operand ScalarLike(Operand x, ElementT value) {}
+
+template <typename ElementT>
+Operand ConstantD0(NoteBuilder* builder, ElementT value) {}
 
 Operand Broadcast(Operand x, const DimensionArray& out_dimensions,
                   const DimensionArray& dimensions_alignment = {}) {

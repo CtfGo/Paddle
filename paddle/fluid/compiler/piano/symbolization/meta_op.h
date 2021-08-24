@@ -16,7 +16,7 @@ limitations under the License. */
 
 #include <cstdint>
 #include <vector>
-#include "paddle/fluid/compiler/piano/note_builder.h"
+#include "paddle/fluid/compiler/piano/symbolization/note_builder.h"
 
 namespace paddle {
 namespace piano {
@@ -27,7 +27,13 @@ using DimensionArray = std::vector<int64_t>;
 // initial instructions to retrieve data passed to the function
 Operand Parameter(NoteBuilder* builder, int64_t parameter_number,
                   const Shape& shape, const string& name);
-// Operand Constant(NoteBuilder* builder, const LiteralSlice& literal);
+// define a scalar containing 'value' cast to the same element type as 'x'.
+template <typename ElementT>
+Operand ScalarLike(Operand x, ElementT value);
+
+// define a constant containing 'value' with dimension 0 (scalar)
+template <typename ElementT>
+Operand ConstantD0(NoteBuilder* builder, ElementT value);
 
 // unary op
 Operand operator-(Operand x);
