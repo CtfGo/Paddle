@@ -52,7 +52,7 @@ Instruction::Instruction(
 
   // add control dependency
   for (auto id : proto.control_predecessor_ids()) {
-    PADDLE_ENFORCE_EQ(instr_index.at(id)->parent(), parent(),
+    PADDLE_ENFORCE_EQ(instr_index.at(id)->mutable_parent(), mutable_parent(),
                       platform::errors::PreconditionNotMet(
                           "The instruction and its dependent instruction are "
                           "not in the same function."));
@@ -68,16 +68,9 @@ Instruction::Instruction(
     }
   }
 
-  // set parameter number
-  if (proto.has_parameter_number()) {
-    PADDLE_ENFORCE_EQ(proto.parameter_number(), operands_.size(),
-                      platform::errors::PreconditionNotMet(
-                          "The number of operands(%ld) is not equal to the "
-                          "parameter_number(%zu) in proto.",
-                          proto.parameter_number(), operands_.size()));
-    parameter_number_ = proto.parameter_number();
-  } else {
-    parameter_number_ = static_cast<std::int64_t>(operands_.size());
+  // set parameter index
+  if (proto.has_parameter_index()) {
+    parameter_index_ = proto.parameter_index();
   }
 
   // set attrs
@@ -94,7 +87,9 @@ InstructionProto Instruction::ToProto() const {
   proto.set_name(name_);
   proto.set_opcode(GetOpName(opcode_));
   proto.set_id(global_id_);
-  proto.set_parameter_number(parameter_number_);
+  if (valid_parameter_index()) {
+    proto.set_parameter_index(parameter_index_);
+  }
 
   // serialize shape info
   *proto.mutable_shape() = shape_.ToProto();
@@ -166,7 +161,7 @@ std::string Instruction::ToString() const {
       string::join_strings(attr_strs, ", ").c_str());
 }
 
-void Instruction::Accept(backends::NoteVisitorBase* visitor) {
+void Instruction::Accept(backends::NoteVisitorBase* visitor) const {
   switch (opcode_) {
 #define HANDLE_VISIT(enum_id, op_name, ...) \
   case OpCode::k##enum_id:                  \

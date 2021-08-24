@@ -91,7 +91,7 @@ message InstructionProto {
   repeated int64 operand_ids = 5;
   repeated int64 control_predecessor_ids = 6;
   repeated int64 call_function_ids = 7;
-  optional int64 parameter_number = 8;
+  optional int64 parameter_index = 8;
   optional string fusion_kind = 9;
   map<string, AttrValueProto> attrs = 10;
 }

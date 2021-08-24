@@ -12,16 +12,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include <algorithm>
 #include <functional>
+#include <stdexcept>
 #include <utility>
 #include "glog/logging.h"
 #include "gtest/gtest.h"
 #include "paddle/fluid/compiler/piano/backends/note_visitor_base.h"
 #include "paddle/fluid/compiler/piano/note/function.h"
 #include "paddle/fluid/compiler/piano/note/instruction.h"
+#include "paddle/fluid/compiler/piano/note/module.h"
 #include "paddle/fluid/compiler/piano/note/note.pb.h"
 #include "paddle/fluid/compiler/piano/note/opcode.h"
 #include "paddle/fluid/compiler/piano/shape.h"
+#include "paddle/fluid/platform/enforce.h"
 #include "paddle/fluid/platform/variant.h"
 
 namespace paddle {
@@ -111,7 +115,7 @@ class IrTest : public testing::Test {
     instr1_proto_.set_name("arg1.1");
     instr1_proto_.set_opcode(GetOpName(OpCode::kParameter));
     instr1_proto_.set_id(1);
-    instr1_proto_.set_parameter_number(0);
+    instr1_proto_.set_parameter_index(0);
     *instr1_proto_.mutable_shape() = arg1_shape.ToProto();
     auto* attrs1_map = instr1_proto_.mutable_attrs();
     AttrValueProto val1_proto;
@@ -134,7 +138,7 @@ class IrTest : public testing::Test {
     instr2_proto_.set_name("arg2.2");
     instr2_proto_.set_opcode(GetOpName(OpCode::kParameter));
     instr2_proto_.set_id(2);
-    instr2_proto_.set_parameter_number(0);
+    instr2_proto_.set_parameter_index(1);
     *instr2_proto_.mutable_shape() = arg2_shape.ToProto();
     auto* attrs2_map = instr2_proto_.mutable_attrs();
     AttrValueProto val2_proto;
@@ -157,7 +161,6 @@ class IrTest : public testing::Test {
     instr3_proto_.set_name("add.3");
     instr3_proto_.set_opcode(GetOpName(OpCode::kAdd));
     instr3_proto_.set_id(3);
-    instr3_proto_.set_parameter_number(2);
     *instr3_proto_.mutable_shape() = result_shape.ToProto();
     instr3_proto_.add_operand_ids(1);
     instr3_proto_.add_operand_ids(2);
@@ -181,10 +184,19 @@ class IrTest : public testing::Test {
     *func_proto_.add_instructions() = instr1_proto_;
     *func_proto_.add_instructions() = instr2_proto_;
     *func_proto_.add_instructions() = instr3_proto_;
+
+    // set module_proto_
+    module_proto_.set_name(func_name_);
+    module_proto_.set_entry_function_name(func_name_);
+    *module_proto_.mutable_entry_function_signature() = signature_proto_;
+    module_proto_.set_id(function_id_);
+    module_proto_.set_entry_function_id(function_id_);
+    *module_proto_.add_functions() = func_proto_;
   }
 
  protected:
   std::string func_name_{"union_12510013719728903619"};
+  ModuleProto module_proto_;
   FunctionProto func_proto_;
   std::int64_t function_id_;
   SignatureProto signature_proto_;
@@ -193,74 +205,112 @@ class IrTest : public testing::Test {
   InstructionProto instr3_proto_;
 };
 
-TEST_F(IrTest, FunctionToString) {
-  std::unordered_map<std::int64_t, Function*> func_index;
-  Function func(func_proto_, func_index);
-  std::string func_str = func.ToString();
+TEST_F(IrTest, ModuleToString) {
+  Module m(module_proto_);
+  std::string mod_str = m.ToString();
   std::string expected_str =
-      R"RES(def %union_12510013719728903619(arg1.1: f32[3, 6]{}, arg2.2: f32[3, 6]{}) -> f32[3, 6]{} {
+      R"RES(Module union_12510013719728903619
+
+[[entry]] def %union_12510013719728903619(arg1.1: f32[3, 6]{}, arg2.2: f32[3, 6]{}) -> f32[3, 6]{} {
   %arg1.1 = f32[3, 6]{} parameter(), test_bools={true, false}, test_double=3.141000_d, test_ints={8_i, 26_i}, test_strings={"hello", "world"}
   %arg2.2 = f32[3, 6]{} parameter(), test_bool=true, test_doubles={5.660000_d, 6.660000_d}, test_floats={8.600000_f, 7.600000_f}, test_longs={8_l, 16_l}
   return %add.3 = f32[3, 6]{} add(f32[3, 6]{} %arg1.1, f32[3, 6]{} %arg2.2), test_float=-1.414000_f, test_int=-1_i, test_long=-100_l, test_string="Add"
-})RES";
-  ASSERT_EQ(expected_str, func_str);
-  LOG(INFO) << "Function string:\n" << func_str;
 }
 
-TEST_F(IrTest, FunctionToProto) {
-  std::unordered_map<std::int64_t, Function*> func_index;
-  Function func(func_proto_, func_index);
-  std::string expected_str = func_proto_.DebugString();
-  std::string real_str = func.ToProto().DebugString();
+)RES";
+  ASSERT_EQ(expected_str, mod_str);
+  LOG(INFO) << "Module string:\n" << mod_str;
+}
+
+TEST_F(IrTest, ModuleToProto) {
+  Module m(module_proto_);
+  std::string expected_str = module_proto_.DebugString();
+  std::string real_str = m.ToProto().DebugString();
   ASSERT_EQ(expected_str, real_str);
-  LOG(INFO) << "The function prototext:\n" << real_str;
+  LOG(INFO) << "The module prototext:\n" << real_str;
+}
+
+TEST_F(IrTest, ModuleDetails) {
+  Module m(module_proto_);
+  ASSERT_EQ(m.name(), func_name_);
+  ASSERT_EQ(m.entry_signature().ToProto().DebugString(),
+            signature_proto_.DebugString());
+  ASSERT_EQ(m.mutable_entry_signature()->ToProto().DebugString(),
+            signature_proto_.DebugString());
+  ASSERT_EQ(m.global_id(), function_id_);
+  ASSERT_EQ(m.EntryFunctionName(), func_name_);
+  ASSERT_EQ(m.EntryFunctionId(), function_id_);
+  ASSERT_EQ(m.functions().size(), 1);
+  ASSERT_EQ(m.function(0)->global_id(), function_id_);
+  m.set_entry_function(nullptr);
+  EXPECT_THROW(m.mutable_entry_function(), platform::EnforceNotMet);
+  int func_count = 0;
+  for (Function& func : m.functions()) {
+    func_count++;
+    LOG(INFO) << func.name();
+  }
+  ASSERT_EQ(func_count, 1);
 }
 
 TEST_F(IrTest, FunctionDetails) {
-  std::unordered_map<std::int64_t, Function*> func_index;
-  Function func(func_proto_, func_index);
-  ASSERT_EQ(func.name(), func_name_);
-  ASSERT_EQ(func.signature().ToProto().DebugString(),
+  Module m(module_proto_);
+  Function* func = m.mutable_entry_function();
+  ASSERT_EQ(func->name(), func_name_);
+  ASSERT_EQ(func->signature().ToProto().DebugString(),
             signature_proto_.DebugString());
-  ASSERT_EQ(func.global_id(), function_id_);
-  ASSERT_EQ(func.return_instr()->opcode(), OpCode::kAdd);
-  ASSERT_EQ(func.params_num(), 2);
-  ASSERT_EQ(func.param_instrs().size(), 2);
-  ASSERT_EQ(func.param_instr(0)->opcode(), OpCode::kParameter);
-  ASSERT_EQ(func.param_instr(1)->opcode(), OpCode::kParameter);
-  ASSERT_EQ(func.instruction(2)->opcode(), OpCode::kAdd);
-  ASSERT_EQ(func.instructions()[2]->opcode(), OpCode::kAdd);
+  ASSERT_EQ(func->global_id(), function_id_);
+  ASSERT_EQ(func->return_instr().opcode(), OpCode::kAdd);
+  ASSERT_EQ(func->params_num(), 2);
+  ASSERT_EQ(func->param_instrs().size(), 2);
+  ASSERT_EQ(func->param_instr(0).opcode(), OpCode::kParameter);
+  ASSERT_EQ(func->param_instr(1).opcode(), OpCode::kParameter);
+  ASSERT_EQ(func->instruction(2)->opcode(), OpCode::kAdd);
+  ASSERT_EQ(func->instructions().size(), 3);
+  const Function& const_func = m.entry_function();
+  ASSERT_EQ(const_func.instruction(1)->opcode(), OpCode::kParameter);
+  int instr_cout = 0;
+  for (Instruction& instr : func->instructions()) {
+    instr_cout++;
+    LOG(INFO) << instr.name();
+  }
+  ASSERT_EQ(instr_cout, 3);
+  auto instructions = func->instructions();
+  auto it = std::find_if(
+      instructions.begin(), instructions.end(),
+      [](const Instruction& instr) { return instr.name() == "add.3"; });
+  ASSERT_EQ(it->opcode(), OpCode::kAdd);
 }
 
 TEST_F(IrTest, InstructionDetails) {
-  std::unordered_map<std::int64_t, Function*> func_index;
-  Function func(func_proto_, func_index);
-  const Instruction* instr = func.return_instr();
-  ASSERT_EQ(instr->name(), "add.3");
-  ASSERT_EQ(instr->parent()->name(), func_name_);
-  ASSERT_EQ(instr->operands().size(), 2);
+  Module m(module_proto_);
+  Function* func = m.mutable_entry_function();
+  const Instruction& instr = func->return_instr();
+  ASSERT_EQ(instr.name(), "add.3");
+  ASSERT_EQ(instr.parent().name(), func_name_);
+  ASSERT_EQ(instr.operands().size(), 2);
   ASSERT_EQ(
-      instr->operand(0)->GetAttr<std::vector<std::string>>("test_strings")[0],
+      instr.operand(0).GetAttr<std::vector<std::string>>("test_strings")[0],
       "hello");
-  ASSERT_EQ(instr->operand(0)->global_id(), 1);
-  ASSERT_EQ(instr->operand(0)->parameter_number(), 0);
-  ASSERT_EQ(instr->operand(1)->ctrl_predecessors().size(), 0);
-  ASSERT_EQ(instr->operand(1)->ctrl_successors().size(), 0);
-  ASSERT_EQ(instr->operand(1)->parameter_number(), 0);
-  ASSERT_EQ(boost::get<std::int64_t>(instr->attrs().at("test_long")), -100l);
-  ASSERT_EQ(instr->shape().Rank(), 2);
+  ASSERT_EQ(instr.operand(0).global_id(), 1);
+  ASSERT_EQ(instr.operand(0).parameter_index(), 0);
+  ASSERT_EQ(instr.operand(1).ctrl_predecessors().size(), 0);
+  ASSERT_EQ(instr.operand(1).ctrl_successors().size(), 0);
+  ASSERT_EQ(instr.operand(1).parameter_index(), 1);
+  ASSERT_EQ(boost::get<std::int64_t>(instr.attrs().at("test_long")), -100l);
+  ASSERT_EQ(instr.shape().Rank(), 2);
   DummyVisitor visitor;
-  instr->Accept(&visitor);
+  instr.Accept(&visitor);
   ASSERT_EQ(visitor.state(), "yes");
-  Instruction* mutable_instr = func.mutable_instruction(0);
+  Instruction* mutable_instr = func->instruction(1);
+  EXPECT_THROW(mutable_instr->mutable_operand(0), platform::EnforceNotMet);
   mutable_instr->Accept(&visitor);
   ASSERT_EQ(visitor.state(), "no");
 }
 
 TEST_F(IrTest, VisitAttr) {
-  std::unordered_map<std::int64_t, Function*> func_index;
-  Function func(func_proto_, func_index);
-  const auto& cpp_map = func.return_instr()->attrs();
+  Module m(module_proto_);
+  const Function& func = m.entry_function();
+  const auto& cpp_map = func.return_instr().attrs();
   const auto& proto_map = instr3_proto_.attrs();
 
   for (auto it = proto_map.begin(); it != proto_map.end(); it++) {

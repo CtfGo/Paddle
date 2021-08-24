@@ -33,10 +33,10 @@ class NoteBuilderTest : public ::testing::Test {
   virtual void SetUp() {
     instr_arg1_.set_name("arg1");
     *instr_arg1_.mutable_shape() = Shape(note::F32, {2, 3}).ToProto();
-    instr_arg1_.set_parameter_number(0);
+    instr_arg1_.set_parameter_index(0);
     instr_arg2_.set_name("arg2");
     *instr_arg2_.mutable_shape() = Shape(note::S8, {2, 3}).ToProto();
-    instr_arg2_.set_parameter_number(1);
+    instr_arg2_.set_parameter_index(1);
     instr_add_.set_name("add");
     *instr_add_.mutable_shape() = Shape(note::F64, {2, 3}).ToProto();
 

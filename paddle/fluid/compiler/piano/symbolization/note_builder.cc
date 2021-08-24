@@ -36,16 +36,16 @@ Operand NoteBuilder::AppendInstruction(note::InstructionProto&& instr,
   // check the precondition of sevel special instructions
   if (opcode == note::OpCode::kParameter) {
     PADDLE_ENFORCE_EQ(
-        instr.has_parameter_number(), true,
+        instr.has_parameter_index(), true,
         platform::errors::PreconditionNotMet(
-            "Parameter instruction shoule fill parameter_number field to "
+            "Parameter instruction shoule fill parameter_index field to "
             "indicate which parameter to be retrieved."));
 
-    const auto& index = instr.parameter_number();
-    PADDLE_ENFORCE_EQ(parameter_numbers_.count(index), 0,
+    const auto& index = instr.parameter_index();
+    PADDLE_ENFORCE_EQ(parameter_indexes_.count(index), 0,
                       platform::errors::AlreadyExists(
                           "Parameter[%d] already registered", index));
-    parameter_numbers_.insert(index);
+    parameter_indexes_.insert(index);
   }
 
   instr.set_id(GetNextId());
@@ -88,19 +88,19 @@ Signature NoteBuilder::BuildSignature() const {
   // by default, the last instruction is root
   *signature.mutable_result() = Shape(instructions_.back().shape());
 
-  signature.mutable_parameters()->resize(parameter_numbers_.size());
-  signature.mutable_parameter_names()->resize(parameter_numbers_.size());
+  signature.mutable_parameters()->resize(parameter_indexes_.size());
+  signature.mutable_parameter_names()->resize(parameter_indexes_.size());
   for (const auto& instr : instructions_) {
     static const auto parameter_opcode_name =
         note::GetOpName(note::OpCode::kParameter);
     if (instr.opcode() == parameter_opcode_name) {
-      const auto& index = instr.parameter_number();
+      const auto& index = instr.parameter_index();
       // this enforce will ensure the retrieved indexes of kParameter
       // are continuous from 0 to the size;
       PADDLE_ENFORCE_EQ(
-          index >= 0 && index < parameter_numbers_.size(), true,
-          platform::errors::OutOfRange("parameter number not in range[0, %lld]",
-                                       parameter_numbers_.size()));
+          index >= 0 && index < parameter_indexes_.size(), true,
+          platform::errors::OutOfRange("parameter index not in range[0, %lld]",
+                                       parameter_indexes_.size()));
 
       signature.mutable_parameters()->at(index) = Shape(instr.shape());
       signature.mutable_parameter_names()->at(index) =
@@ -143,7 +143,7 @@ note::ModuleProto NoteBuilder::Build() {
   this->instructions_.clear();
   this->instruction_shapes_.clear();
   this->id2index_.clear();
-  this->parameter_numbers_.clear();
+  this->parameter_indexes_.clear();
 
   return note_module;
 }

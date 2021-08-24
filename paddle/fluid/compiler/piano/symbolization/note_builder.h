@@ -116,8 +116,8 @@ class NoteBuilder {
   // instruction resides in.
   std::unordered_map<int64_t, int64_t> id2index_;
 
-  // The unique parameter numbers.
-  std::unordered_set<int64_t> parameter_numbers_;
+  // The unique parameter indexes.
+  std::unordered_set<int64_t> parameter_indexes_;
 };
 
 }  // namespace piano

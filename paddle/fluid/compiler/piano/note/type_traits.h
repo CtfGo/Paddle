@@ -14,8 +14,10 @@ limitations under the License. */
 
 #pragma once
 
+#include <iterator>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include "paddle/fluid/compiler/piano/note/note.pb.h"
 #include "paddle/fluid/platform/enforce.h"
@@ -161,6 +163,66 @@ inline void VisitAttrType(::paddle::piano::note::AttrValueProto::ValueCase type,
   PADDLE_THROW(
       platform::errors::Unimplemented("Invalid attribute type %d.", type));
 }
+
+// The definition of the base type alias, by which we can use types in derived
+// classes:
+// ForwardIterator<SmartPtrIter>::reference
+// ForwardIterator<SmartPtrIter>::pointer
+// ...
+template <typename SmartPtrIter>
+using ForwardIterator = std::iterator<
+    std::forward_iterator_tag,
+    std::remove_reference_t<decltype(**std::declval<SmartPtrIter>())>>;
+
+// UnboxingIterator is an iterator adapter, by which we can get the raw pointer.
+template <typename SmartPtrIter>
+class UnboxingIterator : public ForwardIterator<SmartPtrIter> {
+ public:
+  // The default ctor is required by a forward iterator.
+  UnboxingIterator() = default;
+
+  explicit UnboxingIterator(SmartPtrIter &&iter)
+      : iter_(std::forward<SmartPtrIter>(iter)) {}
+
+  // iter_ points to an object of unique_ptr<T>/shared_ptr<T>
+  // *iter_ --> unique_ptr<T>/shared_ptr<T>
+  // **iter_ --> *(unique_ptr<T>/shared_ptr<T>) --> T
+  typename ForwardIterator<SmartPtrIter>::reference operator*() const {
+    return **iter_;
+  }
+
+  typename ForwardIterator<SmartPtrIter>::pointer operator->() const {
+    return iter_->get();
+  }
+
+  UnboxingIterator &operator++() {
+    ++iter_;
+    return *this;
+  }
+
+  UnboxingIterator operator++(int) {
+    UnboxingIterator tmp(iter_);
+    operator++();
+    return tmp;
+  }
+
+  bool operator==(const UnboxingIterator &it) const {
+    return iter_ == it.iter_;
+  }
+
+  bool operator!=(const UnboxingIterator &it) const { return !(*this == it); }
+
+  // Calculate the distance between iterators.
+  // This method is not required by a forward iterator,
+  // which is only used to calculate the size of a iterator range.
+  typename ForwardIterator<SmartPtrIter>::difference_type operator-(
+      const UnboxingIterator &it) const {
+    return iter_ - it.iter_;
+  }
+
+ private:
+  SmartPtrIter iter_;
+};
 
 }  // namespace note
 }  // namespace piano

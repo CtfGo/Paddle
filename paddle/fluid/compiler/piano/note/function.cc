@@ -43,12 +43,27 @@ Function::Function(
     instr->set_parent(this);
     // set parameter(input) instructions field
     if (instr->opcode() == OpCode::kParameter) {
+      PADDLE_ENFORCE_EQ(
+          instr->valid_parameter_index(), true,
+          platform::errors::PreconditionNotMet(
+              "The parameter instruction %s doesn't have a valid index.",
+              instr->name()));
+
       param_instrs_.push_back(instr.get());
     }
-    instr_index[instr_proto.id()] = instr.get();
-    inverted_index[instr.get()] = instr_proto.id();
+
+    auto instr_id = instr_proto.id();
+    PADDLE_ENFORCE_EQ(
+        instr_index.count(instr_id), 0,
+        platform::errors::PreconditionNotMet(
+            "The global id (%ld) of Instruction %s is the same as the previous "
+            "Instruction %s.",
+            instr_id, instr->name(), instr_index[instr_id]->name()));
+    instr_index[instr_id] = instr.get();
+    inverted_index[instr.get()] = instr_id;
     instructions_.emplace_back(std::move(instr));
   }
+
   PADDLE_ENFORCE_EQ(
       proto.return_id() >= 0 && instr_index.count(proto.return_id()), true,
       platform::errors::PreconditionNotMet(

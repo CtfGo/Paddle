@@ -50,11 +50,7 @@ class Instruction {
 
   std::string ToString() const;
 
-  void Accept(backends::NoteVisitorBase *visitor);
-
-  void Accept(backends::NoteVisitorBase *visitor) const {
-    return const_cast<Instruction *>(this)->Accept(visitor);
-  }
+  void Accept(backends::NoteVisitorBase *visitor) const;
 
   // return the name of this instruction
   const std::string &name() const { return name_; }
@@ -62,36 +58,71 @@ class Instruction {
   // return the opcode of this instruction
   OpCode opcode() const { return opcode_; }
 
+  // return the immutable result shape of this instruction
   const Shape &shape() const { return shape_; }
 
+  // return the mutable result shape of this instruction
   Shape *mutable_shape() { return &shape_; }
 
-  const Function *parent() const { return parent_; }
+  // return the immutable function which includes this instruction
+  const Function &parent() const {
+    PADDLE_ENFORCE_NOT_NULL(parent_,
+                            platform::errors::PreconditionNotMet(
+                                "The parent_(Function) of this instruction is "
+                                "null, please set it first."));
+    return *parent_;
+  }
 
-  Function *mutable_parent() { return parent_; }
+  // return the mutable function which includes this instruction
+  Function *mutable_parent() {
+    PADDLE_ENFORCE_NOT_NULL(parent_,
+                            platform::errors::PreconditionNotMet(
+                                "The parent_(Function) of this instruction is "
+                                "null, please set it first."));
+    return parent_;
+  }
 
+  // set the function in which this instruction resides
   void set_parent(Function *func) { parent_ = func; }
 
+  // return the globally unique id of this instruction
   std::int64_t global_id() const { return global_id_; }
 
   // return instruction operands
   const std::vector<Instruction *> &operands() const { return operands_; }
 
-  const Instruction *operand(std::int64_t idx) const {
-    return operands_.at(idx);
-  }
-
-  Instruction *mutable_operand(std::int64_t idx) const {
+  const Instruction &operand(std::int64_t idx) const {
+    PADDLE_ENFORCE_EQ(
+        idx >= 0 && idx < static_cast<std::int64_t>(operands_.size()), true,
+        platform::errors::PreconditionNotMet("Invalid index value %ld. Its "
+                                             "value should between 0(include) "
+                                             "and %zu(exclude).",
+                                             idx, operands_.size()));
     PADDLE_ENFORCE_NOT_NULL(operands_[idx],
                             platform::errors::PreconditionNotMet(
                                 "operand %ld should not be null.", idx));
-    return operands_.at(idx);
+    return *operands_[idx];
   }
 
+  Instruction *mutable_operand(std::int64_t idx) {
+    PADDLE_ENFORCE_EQ(
+        idx >= 0 && idx < static_cast<std::int64_t>(operands_.size()), true,
+        platform::errors::PreconditionNotMet("Invalid index value %ld. Its "
+                                             "value should between 0(include) "
+                                             "and %zu(exclude).",
+                                             idx, operands_.size()));
+    PADDLE_ENFORCE_NOT_NULL(operands_[idx],
+                            platform::errors::PreconditionNotMet(
+                                "operand %ld should not be null.", idx));
+    return operands_[idx];
+  }
+
+  // return the control predecessors of this instruction
   const std::vector<Instruction *> &ctrl_predecessors() const {
     return ctrl_predecessors_;
   }
 
+  // return the control successors of this instruction
   const std::vector<Instruction *> &ctrl_successors() const {
     return ctrl_successors_;
   }
@@ -101,7 +132,11 @@ class Instruction {
     return call_functions_;
   }
 
-  std::int64_t parameter_number() const { return parameter_number_; }
+  // return the input index of this instruction
+  std::int64_t parameter_index() const { return parameter_index_; }
+
+  // only the Parameter instruction has a valid parameter index
+  bool valid_parameter_index() const { return parameter_index_ != -1; }
 
   // return attributes of this instruction
   const MapType &attrs() const { return attrs_; }
@@ -148,8 +183,8 @@ class Instruction {
   std::vector<Instruction *> ctrl_successors_;
   // functions called directly by this instruction
   std::vector<Function *> call_functions_;
-  // the parameter number of this instruction
-  std::int64_t parameter_number_;
+  // the input index of this instruction
+  std::int64_t parameter_index_{-1};
   // attributes belongs to this instruction
   MapType attrs_;
   // the function where this instruction is contained
