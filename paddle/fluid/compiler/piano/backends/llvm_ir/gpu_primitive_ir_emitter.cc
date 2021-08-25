@@ -13,16 +13,63 @@
 // limitations under the License.
 
 #include "paddle/fluid/compiler/piano/backends/llvm_ir/gpu_primitive_ir_emitter.h"
+#include "paddle/fluid/compiler/piano/backends/llvm_ir/primitive_ir_emitter.h"
+#include "paddle/fluid/compiler/piano/note/instruction.h"
+#include "paddle/fluid/compiler/piano/note/opcode.h"
 
 namespace paddle {
 namespace piano {
 namespace backends {
 
+BinaryFunction GpuPrimitiveIrEmitter::GetBinaryComputation(
+    const note::Instruction& instr) {
+  return [&instr, this](llvm::Value* lhs, llvm::Value* rhs,
+                        llvm::IRBuilder<>* builder) -> llvm::Value* {
+    switch (instr.opcode()) {
+      case note::OpCode::kAdd:
+        return this->Add(lhs, rhs, builder);
+      case note::OpCode::kMultiply:
+        return this->Multiply(lhs, rhs, builder);
+      default:
+        PADDLE_THROW(platform::errors::InvalidArgument("Invalid OpCode."));
+    }
+  };
+}
+
+UnaryFunction GpuPrimitiveIrEmitter::GetUnaryComputation(
+    const note::Instruction& instr) {
+  return nullptr;
+}
+
 void GpuPrimitiveIrEmitter::VisitElementwiseUnary(
     const note::Instruction& instr) {}
 
 void GpuPrimitiveIrEmitter::VisitElementwiseBinary(
-    const note::Instruction& instr) {}
+    const note::Instruction& instr) {
+  // Load
+  primitive_ir_generators_.emplace_back(
+      "Load_" + instr.name(), "LOAD",
+      [this](IrArray llvm_values, llvm::IRBuilder<>* llvm_builder) {
+        // (lhs, rhs, index) = llvm_values[0:3]
+        return IrArray{Load(llvm_values[0], llvm_values[2], llvm_builder),
+                       Load(llvm_values[1], llvm_values[2], llvm_builder)};
+      });
+  // Compute
+  primitive_ir_generators_.emplace_back(
+      "Compute_" + instr.name(), "COMPUTE",
+      [this, &instr](IrArray llvm_values, llvm::IRBuilder<>* llvm_builder) {
+        return IrArray{GetBinaryComputation(instr)(
+            llvm_values[0], llvm_values[1], llvm_builder)};
+      });
+  // Store
+  primitive_ir_generators_.emplace_back(
+      "Store_" + instr.name(), "STORE",
+      [this](IrArray llvm_values, llvm::IRBuilder<>* llvm_builder) {
+        // (src, dst, dst_index) = llvm_values[0:3]
+        return IrArray{Store(llvm_values[0], llvm_values[1], llvm_values[2],
+                             llvm_builder)};
+      });
+}
 
 // Scalar op
 void GpuPrimitiveIrEmitter::VisitConstant(const note::Instruction& instr) {}

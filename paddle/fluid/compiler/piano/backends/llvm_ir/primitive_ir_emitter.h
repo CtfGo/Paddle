@@ -24,7 +24,8 @@ namespace backends {
 
 class PrimitiveIrEmitter : public NoteVisitorBase {
  public:
-  PrimitiveIrEmitter() {}
+  PrimitiveIrEmitter(llvm::LLVMContext* ctx, llvm::Function* func)
+      : ctx_(ctx), func_(func) {}
   virtual ~PrimitiveIrEmitter() {}
 
   virtual void VisitElementwiseUnary(const note::Instruction&) = 0;
@@ -79,8 +80,27 @@ class PrimitiveIrEmitter : public NoteVisitorBase {
 
   std::vector<PrimitiveIrGenerator> GetPrimitiveIrGenerators();
 
+  llvm::Value* Add(llvm::Value* lhs, llvm::Value* rhs,
+                   llvm::IRBuilder<>* ir_builder);
+  llvm::Value* Multiply(llvm::Value* lhs, llvm::Value* rhs,
+                        llvm::IRBuilder<>* ir_builder);
+
+  llvm::Value* Load(llvm::Value* input, llvm::Value* index,
+                    llvm::IRBuilder<>* ir_builder);
+  llvm::Value* Store(llvm::Value* src, llvm::Value* dst, llvm::Value* dst_index,
+                     llvm::IRBuilder<>* ir_builder);
+
+  void If(llvm::Value* cond,
+          std::function<void(llvm::IRBuilder<>* ir_builder)> then_body,
+          llvm::IRBuilder<>* ir_builder);
+  void For(llvm::Value* begin, llvm::Value* end, llvm::Value* stride,
+           std::function<void(llvm::IRBuilder<>* ir_builder)> for_body,
+           llvm::IRBuilder<>* ir_builder);
+
  protected:
   std::vector<PrimitiveIrGenerator> primitive_ir_generators_;
+  llvm::LLVMContext* ctx_{nullptr};
+  llvm::Function* func_;
 };
 
 }  // namespace backends

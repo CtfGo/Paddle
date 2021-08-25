@@ -2,7 +2,7 @@
 cc_library(piano_compile_pass SRCS piano_compile_pass.cc DEPS pass subgraph_detector)
 cc_test(piano_compile_pass_test SRCS piano_compile_pass_tester.cc DEPS piano_compile_pass)
 
-cc_library(piano_op_registry SRCS piano_op_registry.cc DEPS framework_proto note_proto piano_data_description)
+cc_library(piano_op_registry SRCS piano_op_registry.cc DEPS framework_proto op_registry note_proto piano_data_description)
 cc_test(piano_op_registry_test SRCS piano_op_registry_test.cc DEPS piano_op_registry operator op_registry)
 
 cc_library(piano_op_kernel_context SRCS piano_op_kernel_context.cc DEPS piano_op_registry proto_desc note_builder)

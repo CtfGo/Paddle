@@ -20,13 +20,19 @@ namespace paddle {
 namespace piano {
 namespace backends {
 
+using BinaryFunction =
+    std::function<llvm::Value*(llvm::Value*, llvm::Value*, llvm::IRBuilder<>*)>;
+using UnaryFunction =
+    std::function<llvm::Value*(llvm::Value*, llvm::IRBuilder<>*)>;
+
 class GpuPrimitiveIrEmitter : public PrimitiveIrEmitter {
  public:
-  virtual std::function<llvm::Value*(llvm::Value*, llvm::Value*,
-                                     llvm::IRBuilder<>*)>
-  GetBinaryOp(const note::Instruction&) = 0;
-  virtual std::function<llvm::Value*(llvm::Value*, llvm::IRBuilder<>*)>
-  GetUnaryOp(const note::Instruction&) = 0;
+  GpuPrimitiveIrEmitter(llvm::LLVMContext* ctx, llvm::Function* func)
+      : PrimitiveIrEmitter(ctx, func) {}
+  ~GpuPrimitiveIrEmitter() {}
+
+  BinaryFunction GetBinaryComputation(const note::Instruction&);
+  UnaryFunction GetUnaryComputation(const note::Instruction&);
 
   void VisitElementwiseUnary(const note::Instruction&) override;
   void VisitElementwiseBinary(const note::Instruction&) override;
@@ -60,6 +66,9 @@ class GpuPrimitiveIrEmitter : public PrimitiveIrEmitter {
   virtual llvm::Value* BlockIdx(llvm::IRBuilder<>*) = 0;
   virtual llvm::Value* BlockIdy(llvm::IRBuilder<>*) = 0;
   virtual llvm::Value* BlockIdz(llvm::IRBuilder<>*) = 0;
+  virtual llvm::Value* GridDimx(llvm::IRBuilder<>* ir_builder) = 0;
+  virtual llvm::Value* GridDimy(llvm::IRBuilder<>* ir_builder) = 0;
+  virtual llvm::Value* GridDimz(llvm::IRBuilder<>* ir_builder) = 0;
   virtual void ThreadSync(llvm::IRBuilder<>*) = 0;
   virtual llvm::Value* Alloca(llvm::IRBuilder<>*, unsigned) = 0;
 };

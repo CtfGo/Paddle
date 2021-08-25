@@ -16,19 +16,23 @@
 
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Intrinsics.h"
+#include "llvm/IR/Module.h"
 #include "llvm/IR/Value.h"
+#include "paddle/fluid/compiler/piano/note/note.pb.h"
 
 namespace paddle {
 namespace piano {
 namespace backends {
 
 llvm::Value* CallToLLVMIntrinsic(llvm::IRBuilder<>* ir_builder,
-                                 llvm::Intrinsic::ID llvm_Intrinsic) {
-  llvm::Module* llvm_module = ir_builder->GetInsertBlock()->getModule();
-  llvm::Function* func =
-      llvm::Intrinsic::getDeclaration(llvm_module, llvm_Intrinsic);
-  return ir_builder->CreateCall(func);
-}
+                                 llvm::Intrinsic::ID llvm_Intrinsic);
+
+llvm::Type* ElementTypeToLLVMType(note::ElementTypeProto element_type,
+                                  llvm::Module* module);
+
+llvm::Function* CreateLLVMFunction(
+    const std::string& func_name,
+    const std::vector<note::ElementTypeProto>& types, llvm::Module* module);
 
 }  // namespace backends
 }  // namespace piano

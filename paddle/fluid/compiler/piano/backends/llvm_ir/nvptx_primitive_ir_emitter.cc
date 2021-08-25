@@ -20,22 +20,6 @@ namespace paddle {
 namespace piano {
 namespace backends {
 
-std::function<llvm::Value*(llvm::Value*, llvm::IRBuilder<>*)>
-NvptxPrimitiveIrEmitter::GetUnaryOp(const note::Instruction& instr) {
-  return [&instr](llvm::Value* Value,
-                  llvm::IRBuilder<>* ir_builder) -> llvm::Value* {
-    return nullptr;
-  };
-}
-
-std::function<llvm::Value*(llvm::Value*, llvm::Value*, llvm::IRBuilder<>*)>
-NvptxPrimitiveIrEmitter::GetBinaryOp(const note::Instruction& instr) {
-  return [&instr](llvm::Value* first, llvm::Value* dst,
-                  llvm::IRBuilder<>* ir_builder) -> llvm::Value* {
-    return nullptr;
-  };
-}
-
 llvm::Value* NvptxPrimitiveIrEmitter::ThreadIdx(llvm::IRBuilder<>* ir_builder) {
   llvm::Intrinsic::ID llvm_Intrinsic =
       llvm::Intrinsic::nvvm_read_ptx_sreg_tid_x;
@@ -87,6 +71,24 @@ llvm::Value* NvptxPrimitiveIrEmitter::BlockIdy(llvm::IRBuilder<>* ir_builder) {
 llvm::Value* NvptxPrimitiveIrEmitter::BlockIdz(llvm::IRBuilder<>* ir_builder) {
   llvm::Intrinsic::ID llvm_Intrinsic =
       llvm::Intrinsic::nvvm_read_ptx_sreg_ntid_z;
+  return CallToLLVMIntrinsic(ir_builder, llvm_Intrinsic);
+}
+
+llvm::Value* NvptxPrimitiveIrEmitter::GridDimx(llvm::IRBuilder<>* ir_builder) {
+  llvm::Intrinsic::ID llvm_Intrinsic =
+      llvm::Intrinsic::nvvm_read_ptx_sreg_nctaid_x;
+  return CallToLLVMIntrinsic(ir_builder, llvm_Intrinsic);
+}
+
+llvm::Value* NvptxPrimitiveIrEmitter::GridDimy(llvm::IRBuilder<>* ir_builder) {
+  llvm::Intrinsic::ID llvm_Intrinsic =
+      llvm::Intrinsic::nvvm_read_ptx_sreg_nctaid_y;
+  return CallToLLVMIntrinsic(ir_builder, llvm_Intrinsic);
+}
+
+llvm::Value* NvptxPrimitiveIrEmitter::GridDimz(llvm::IRBuilder<>* ir_builder) {
+  llvm::Intrinsic::ID llvm_Intrinsic =
+      llvm::Intrinsic::nvvm_read_ptx_sreg_nctaid_z;
   return CallToLLVMIntrinsic(ir_builder, llvm_Intrinsic);
 }
 

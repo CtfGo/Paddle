@@ -21,13 +21,9 @@ namespace backends {
 
 class NvptxPrimitiveIrEmitter : public GpuPrimitiveIrEmitter {
  public:
-  NvptxPrimitiveIrEmitter() {}
+  NvptxPrimitiveIrEmitter(llvm::LLVMContext* ctx, llvm::Function* func)
+      : GpuPrimitiveIrEmitter(ctx, func) {}
   ~NvptxPrimitiveIrEmitter() {}
-
-  std::function<llvm::Value*(llvm::Value*, llvm::IRBuilder<>*)> GetUnaryOp(
-      const note::Instruction&) override;
-  std::function<llvm::Value*(llvm::Value*, llvm::Value*, llvm::IRBuilder<>*)>
-  GetBinaryOp(const note::Instruction&) override;
 
   // block size
   llvm::Value* ThreadIdx(llvm::IRBuilder<>*) override;
@@ -39,6 +35,9 @@ class NvptxPrimitiveIrEmitter : public GpuPrimitiveIrEmitter {
   llvm::Value* BlockIdx(llvm::IRBuilder<>*) override;
   llvm::Value* BlockIdy(llvm::IRBuilder<>*) override;
   llvm::Value* BlockIdz(llvm::IRBuilder<>*) override;
+  llvm::Value* GridDimx(llvm::IRBuilder<>*) override;
+  llvm::Value* GridDimy(llvm::IRBuilder<>*) override;
+  llvm::Value* GridDimz(llvm::IRBuilder<>*) override;
   void ThreadSync(llvm::IRBuilder<>*) override;
   llvm::Value* Alloca(llvm::IRBuilder<>*, unsigned) override;
 };
