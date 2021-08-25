@@ -12,64 +12,94 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-// #include "paddle/fluid/compiler/piano/shape.h"
-// #include "paddle/fluid/compiler/piano/shape_inference.h"
 #include "paddle/fluid/compiler/piano/symbolization/meta_op.h"
+#include <algorithm>
 #include <numeric>
-#include "paddle/fluid/compiler/piano/symbolization/common.h"
+#include <utility>
+#include "paddle/fluid/compiler/piano/note/note.pb.h"
+#include "paddle/fluid/compiler/piano/symbolization/shape_inference.h"
 
 namespace paddle {
 namespace piano {
 
-Operand Parameter(NoteBuilder* builder, int64_t parameter_number,
-                  const Shape& shape, const string& name) {}
+Operand Parameter(NoteBuilder* builder, int64_t parameter_index,
+                  const Shape& shape, const std::string& name) {
+  note::InstructionProto instr;
+  instr.set_parameter_index(parameter_index);
+  instr.set_name(name);
+  *instr.mutable_shape() = shape.ToProto();
+  return builder->AppendInstruction(std::move(instr), note::OpCode::kParameter,
+                                    {});
+}
 
-template <typename ElementT>
-Operand ScalarLike(Operand x, ElementT value) {}
-
-template <typename ElementT>
-Operand ConstantD0(NoteBuilder* builder, ElementT value) {}
-
-Operand Broadcast(Operand x, const DimensionArray& out_dimensions,
-                  const DimensionArray& dimensions_alignment = {}) {
-  DimensionArray right_alignment;
+Operand Broadcast(Operand x, const std::vector<int64_t>& out_dimensions,
+                  const std::vector<int64_t>& dimensions_alignment) {
+  DimensionArray to_right_alignment;
   if (dimensions_alignment.empty()) {
     PADDLE_ENFORCE_LE(x.Shape().Rank(), out_dimensions.size(),
                       platform::errors::InvalidArgument(
                           "Rank of operand should be less than output"));
-    right_alignment.resize(x.Shape().Rank());
-    std::itoa(right_alignment.begin(), right_alignment.end(), 0);
+    to_right_alignment.resize(x.Shape().Rank());
+    std::iota(to_right_alignment.begin(), to_right_alignment.end(), 0);
     auto gap_len = out_dimensions.size() - x.Shape().Rank();
-    right_alignment[i] = i + gap_len;
+    std::transform(to_right_alignment.begin(), to_right_alignment.end(),
+                   to_right_alignment.begin(),
+                   [gap_len](const auto& x) { return x + gap_len; });
   }
 
-  auto&& result_shape = InferBroadcastShape(
-      x.Shape(), out_dimensions,
-      dimensions_alignment.empty() ? right_alignment : dimensions_alignment);
-  InstructionProto instr;
+  const auto& alignment_array =
+      dimensions_alignment.empty() ? to_right_alignment : dimensions_alignment;
+  auto&& result_shape =
+      InferBroadcastShape(x.Shape(), out_dimensions, alignment_array);
+  note::InstructionProto instr;
   *instr.mutable_shape() = result_shape.ToProto();
-  // TODO(CtfGo): add dimensions_alignment to the instruction as an attribute
-  // after note ir ready.
-  // for (auto&& dim : dimensions_alignment) {
-  //   instr.add_dimensions(dim);
-  // }
-  return AddInstruction(std::move(instr), HloOpcode::kBroadcast, {x});
+  // fill alignment array to its attribute
+  auto* attrs_map = instr.mutable_attrs();
+  note::AttrValueProto attr_value;
+  note::PopulateAttrValueProtoD1(alignment_array, &attr_value);
+  attrs_map->at(note::kBroadcastAlignment) = attr_value;
+  return x.Builder()->AppendInstruction(std::move(instr),
+                                        note::OpCode::kBroadcast, {x});
+}
+
+Operand UnaryOp(note::OpCode unop, Operand x) {
+  note::InstructionProto instr;
+  auto&& shape = InferUnaryOpShape(unop, x.Shape());
+  *instr.mutable_shape() = shape.ToProto();
+  return x.Builder()->AppendInstruction(std::move(instr), unop, {x});
 }
 
 Operand operator-(Operand x) { return Neg(x); }
+Operand operator~(Operand x) { return Not(x); }
+Operand Neg(Operand x) { return UnaryOp(note::OpCode::kNegative, x); }
+Operand Not(Operand x) { return UnaryOp(note::OpCode::kNot, x); }
+
+Operand BinaryOp(note::OpCode binop, Operand x, Operand y) {
+  // add broadcast if shape of the operands are not same
+  x = x.Shape().Rank() < y.Shape().Rank() ? Broadcast(x, y.Shape().dimensions())
+                                          : x;
+  y = y.Shape().Rank() < x.Shape().Rank() ? Broadcast(y, x.Shape().dimensions())
+                                          : y;
+  // ensure shape are compatible
+  PADDLE_ENFORCE_EQ(x.Shape(), y.Shape(),
+                    platform::errors::InvalidArgument(
+                        "Shape of operands should be euqal on Binary Op"));
+
+  note::InstructionProto instr;
+  auto&& shape = InferBinaryOpShape(binop, x.Shape(), y.Shape());
+  *instr.mutable_shape() = shape.ToProto();
+  return x.Builder()->AppendInstruction(std::move(instr), binop, {x, y});
+}
+
 Operand operator+(Operand x, Operand y) { return Add(x, y); }
 Operand operator-(Operand x, Operand y) { return Sub(x, y); }
 Operand operator*(Operand x, Operand y) { return Mul(x, y); }
 Operand operator/(Operand x, Operand y) { return Div(x, y); }
 Operand operator%(Operand x, Operand y) { return Rem(x, y); }
-
-Operand operator~(Operand x) { return Not(x); }
 Operand operator&(Operand x, Operand y) { return And(x, y); }
 Operand operator|(Operand x, Operand y) { return Or(x, y); }
 Operand operator^(Operand x, Operand y) { return Xor(x, y); }
-Operand operator<<(Operand x, Operand y) { return ShiftLeft(x, y); }
 
-Operand Not(Operand x) { return UnaryOp(note::Opcode::kNot, x); }
 Operand Add(Operand x, Operand y) { return BinaryOp(note::OpCode::kAdd, x, y); }
 
 Operand Sub(Operand x, Operand y) {
@@ -94,14 +124,13 @@ Operand Min(Operand x, Operand y) {
 
 Operand And(Operand x, Operand y) { return BinaryOp(note::OpCode::kAnd, x, y); }
 
-// Operand Rem(Operand x, Operand y, DimensionArray broadcast_dimensions) {
-//   return BinaryOp(note::OpCode::kRem, x, y, broadcast_dimensions);
-// }
-//
-// Operand ShiftLeft(Operand x, Operand y, DimensionArray broadcast_dimensions)
-// {
-//   return BinaryOp(note::OpCode::kShiftLeft, x, y, broadcast_dimensions);
-// }
+Operand Rem(Operand x, Operand y) {
+  return BinaryOp(note::OpCode::kRemainder, x, y);
+}
+
+Operand Or(Operand x, Operand y) { return BinaryOp(note::OpCode::kOr, x, y); }
+
+Operand Xor(Operand x, Operand y) { return BinaryOp(note::OpCode::kXor, x, y); }
 
 }  // namespace piano
 }  // namespace paddle

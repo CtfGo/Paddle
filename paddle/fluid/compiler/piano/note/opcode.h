@@ -53,6 +53,7 @@ namespace note {
   HANDLE(Or, "or", 2)                                   \
   HANDLE(Subtract, "subtract", 2)                       \
   HANDLE(Xor, "xor", 2)                                 \
+  HANDLE(Remainder, "remainder", 2)                     \
   HANDLE(Select, "select", 3)                           \
   HANDLE(Concatenate, "concatenate", kVariadicParamNum) \
   HANDLE(Reduce, "reduce", kVariadicParamNum)           \

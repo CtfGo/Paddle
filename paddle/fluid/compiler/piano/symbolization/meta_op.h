@@ -15,7 +15,12 @@ limitations under the License. */
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <vector>
+#include "paddle/fluid/compiler/piano/note/attribute_key_defs.h"
+#include "paddle/fluid/compiler/piano/note/element_type_util.h"
+#include "paddle/fluid/compiler/piano/note/populate_attribute_value.h"
+#include "paddle/fluid/compiler/piano/shape.h"
 #include "paddle/fluid/compiler/piano/symbolization/note_builder.h"
 
 namespace paddle {
@@ -25,19 +30,18 @@ class Operand;
 using DimensionArray = std::vector<int64_t>;
 
 // initial instructions to retrieve data passed to the function
-Operand Parameter(NoteBuilder* builder, int64_t parameter_number,
-                  const Shape& shape, const string& name);
-// define a scalar containing 'value' cast to the same element type as 'x'.
-template <typename ElementT>
-Operand ScalarLike(Operand x, ElementT value);
+Operand Parameter(NoteBuilder* builder, int64_t parameter_index,
+                  const Shape& shape, const std::string& name);
 
 // define a constant containing 'value' with dimension 0 (scalar)
-template <typename ElementT>
-Operand ConstantD0(NoteBuilder* builder, ElementT value);
+template <typename NativeT>
+Operand ConstantD0(NoteBuilder* builder, NativeT value);
 
 // unary op
 Operand operator-(Operand x);
 Operand operator~(Operand x);
+Operand Neg(Operand x);
+Operand Not(Operand x);
 
 // The broadcast semantic including two kinds of expanding operation on an
 // array:
@@ -53,17 +57,17 @@ Operand operator~(Operand x);
 // dimension of the output. This also requires that the i'th input dimension is
 // either 1 or is the same as the output dimension it's broadcasting into.
 //
-// For example, say operand = {1, 2}, i.e., a 1D tensor in shape s32[2]; the
-// output shape is s32[2,2]:
-// - Specifying {1} as broadcast_dimension will generate output
+// For example, say operand = {1, 2}, i.e., a 1D tensor in shape s32[2] and
+// expect the output shape is s32[2,2]:
+// - Specifying {1} as dimensions_alignment will generate output
 //   {{1, 2},
 //    {1, 2}}
-// - On the other hand, specifying {0} as broadcast_dimension
+// - On the other hand, specifying {0} as dimensions_alignment
 //   will generate output
 //   {{1 , 1},
 //    {2 , 2}}
-Operand Broadcast(Operand x, const DimensionArray& out_dimensions_size,
-                  const DimensionArray& dimensions_alignment = {});
+Operand Broadcast(Operand x, const std::vector<int64_t>& out_dimensions,
+                  const std::vector<int64_t>& dimensions_alignment = {});
 
 // binary op
 Operand operator+(Operand x, Operand y);
@@ -81,8 +85,24 @@ Operand Div(Operand x, Operand y);
 Operand Max(Operand x, Operand y);
 Operand Min(Operand x, Operand y);
 Operand And(Operand x, Operand y);
+Operand Rem(Operand x, Operand y);
 Operand Or(Operand x, Operand y);
 Operand Xor(Operand x, Operand y);
+
+template <typename NativeT>
+Operand ConstantD0(NoteBuilder* builder, NativeT value) {
+  // construct shape
+  Shape result_shape(note::NativeToElementTypeProto<NativeT>(), {});
+  note::InstructionProto instr;
+  *instr.mutable_shape() = result_shape.ToProto();
+  // fill constant attribute
+  auto* attrs_map = instr.mutable_attrs();
+  note::AttrValueProto attr_value;
+  note::PopulateAttrValueProtoD0(value, &attr_value);
+  attrs_map->at(note::kConstantValue) = attr_value;
+  return builder->AppendInstruction(std::move(instr), note::OpCode::kConstant,
+                                    {});
+}
 
 }  // namespace piano
 }  // namespace paddle

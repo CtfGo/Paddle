@@ -14,7 +14,6 @@ limitations under the License. */
 
 #pragma once
 
-#include <utility>
 #include <vector>
 #include "paddle/fluid/compiler/piano/note/opcode.h"
 #include "paddle/fluid/compiler/piano/shape.h"
@@ -22,14 +21,14 @@ limitations under the License. */
 namespace paddle {
 namespace piano {
 
-class Operand;
+Shape InferUnaryOpShape(note::OpCode opcode, const Shape& shape);
 
-Operand UnaryOp(note::OpCode unop, Operand x);
+Shape InferBinaryOpShape(note::OpCode opcode, const Shape& lhs,
+                         const Shape& rhs);
 
-std::pair<Operand, Operand> AddBroadCastForeOp(
-    Operand x, Operand y, const std::vector<int64_t>& broadcast_dimensions);
-Operand BinaryOp(note::OpCode binop, Operand x, Operand y,
-                 const std::vector<int64_t>& broadcast_dimensions);
+Shape InferBroadcastShape(const Shape& input_shape,
+                          const std::vector<int64_t>& out_dimensions,
+                          const std::vector<int64_t>& dimensions_alignment);
 
 }  // namespace piano
 }  // namespace paddle
