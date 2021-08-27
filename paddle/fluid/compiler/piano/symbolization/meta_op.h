@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 #include "paddle/fluid/compiler/piano/note/attribute_key_defs.h"
 #include "paddle/fluid/compiler/piano/note/element_type_util.h"
@@ -27,7 +28,6 @@ namespace paddle {
 namespace piano {
 
 class Operand;
-using DimensionArray = std::vector<int64_t>;
 
 // initial instructions to retrieve data passed to the function
 Operand Parameter(NoteBuilder* builder, int64_t parameter_index,
@@ -89,6 +89,7 @@ Operand Rem(Operand x, Operand y);
 Operand Or(Operand x, Operand y);
 Operand Xor(Operand x, Operand y);
 
+// define template function on header
 template <typename NativeT>
 Operand ConstantD0(NoteBuilder* builder, NativeT value) {
   // construct shape
@@ -98,8 +99,8 @@ Operand ConstantD0(NoteBuilder* builder, NativeT value) {
   // fill constant attribute
   auto* attrs_map = instr.mutable_attrs();
   note::AttrValueProto attr_value;
-  note::PopulateAttrValueProtoD0(value, &attr_value);
-  attrs_map->at(note::kConstantValue) = attr_value;
+  note::PopulateAttrValueProto(value, &attr_value);
+  (*attrs_map)[note::kConstantValue] = attr_value;
   return builder->AppendInstruction(std::move(instr), note::OpCode::kConstant,
                                     {});
 }

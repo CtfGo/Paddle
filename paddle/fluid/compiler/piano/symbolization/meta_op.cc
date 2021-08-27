@@ -18,12 +18,15 @@ limitations under the License. */
 #include <utility>
 #include "paddle/fluid/compiler/piano/note/note.pb.h"
 #include "paddle/fluid/compiler/piano/symbolization/shape_inference.h"
+#include "paddle/fluid/platform/enforce.h"
 
 namespace paddle {
 namespace piano {
 
 Operand Parameter(NoteBuilder* builder, int64_t parameter_index,
                   const Shape& shape, const std::string& name) {
+  PADDLE_ENFORCE_GE(parameter_index, 0, platform::errors::InvalidArgument(
+                                            "Parameter_index should be >= 0"));
   note::InstructionProto instr;
   instr.set_parameter_index(parameter_index);
   instr.set_name(name);
@@ -34,7 +37,7 @@ Operand Parameter(NoteBuilder* builder, int64_t parameter_index,
 
 Operand Broadcast(Operand x, const std::vector<int64_t>& out_dimensions,
                   const std::vector<int64_t>& dimensions_alignment) {
-  DimensionArray to_right_alignment;
+  std::vector<int64_t> to_right_alignment;
   if (dimensions_alignment.empty()) {
     PADDLE_ENFORCE_LE(x.Shape().Rank(), out_dimensions.size(),
                       platform::errors::InvalidArgument(
@@ -56,8 +59,8 @@ Operand Broadcast(Operand x, const std::vector<int64_t>& out_dimensions,
   // fill alignment array to its attribute
   auto* attrs_map = instr.mutable_attrs();
   note::AttrValueProto attr_value;
-  note::PopulateAttrValueProtoD1(alignment_array, &attr_value);
-  attrs_map->at(note::kBroadcastAlignment) = attr_value;
+  note::PopulateAttrValueProto(alignment_array, &attr_value);
+  (*attrs_map)[note::kBroadcastAlignment] = attr_value;
   return x.Builder()->AppendInstruction(std::move(instr),
                                         note::OpCode::kBroadcast, {x});
 }
@@ -80,7 +83,7 @@ Operand BinaryOp(note::OpCode binop, Operand x, Operand y) {
                                           : x;
   y = y.Shape().Rank() < x.Shape().Rank() ? Broadcast(y, x.Shape().dimensions())
                                           : y;
-  // ensure shape are compatible
+  // ensure shape are equal
   PADDLE_ENFORCE_EQ(x.Shape(), y.Shape(),
                     platform::errors::InvalidArgument(
                         "Shape of operands should be euqal on Binary Op"));

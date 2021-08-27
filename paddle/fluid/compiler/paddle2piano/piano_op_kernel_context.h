@@ -20,7 +20,7 @@ limitations under the License. */
 
 #include "paddle/fluid/compiler/paddle2piano/piano_op_registry.h"
 #include "paddle/fluid/compiler/paddle2piano/piano_scope.h"
-#include "paddle/fluid/compiler/piano/note_builder.h"
+#include "paddle/fluid/compiler/piano/symbolization/note_builder.h"
 #include "paddle/fluid/framework/op_desc.h"
 
 namespace paddle {

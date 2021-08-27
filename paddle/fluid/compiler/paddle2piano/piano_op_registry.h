@@ -21,7 +21,7 @@ limitations under the License. */
 #include <vector>
 
 #include "paddle/fluid/compiler/piano/note/note.pb.h"
-#include "paddle/fluid/compiler/piano/note_builder.h"
+#include "paddle/fluid/compiler/piano/symbolization/note_builder.h"
 #include "paddle/fluid/framework/op_registry.h"
 #include "paddle/fluid/framework/type_defs.h"
 #include "paddle/fluid/platform/enforce.h"

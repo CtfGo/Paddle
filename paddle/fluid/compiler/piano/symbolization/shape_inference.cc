@@ -46,7 +46,7 @@ Shape InferBroadcastShape(const Shape& operand_shape,
       platform::errors::InvalidArgument(
           "Rank of operand should be equal to dimensions_alignment size"));
 
-  // check length of all dimension are not negative.
+  // check the length of each out dimension are positive
   for (auto&& dim_size : out_dimensions) {
     PADDLE_ENFORCE_GT(
         dim_size, 0,
