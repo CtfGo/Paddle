@@ -75,7 +75,6 @@ Operand operator+(Operand x, Operand y);
 Operand operator-(Operand x, Operand y);
 Operand operator*(Operand x, Operand y);
 Operand operator/(Operand x, Operand y);
-Operand operator%(Operand x, Operand y);
 Operand operator&(Operand x, Operand y);
 Operand operator|(Operand x, Operand y);
 Operand operator^(Operand x, Operand y);
@@ -86,7 +85,6 @@ Operand Div(Operand x, Operand y);
 Operand Max(Operand x, Operand y);
 Operand Min(Operand x, Operand y);
 Operand And(Operand x, Operand y);
-Operand Rem(Operand x, Operand y);
 Operand Or(Operand x, Operand y);
 Operand Xor(Operand x, Operand y);
 

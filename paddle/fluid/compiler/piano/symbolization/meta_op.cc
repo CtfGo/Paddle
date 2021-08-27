@@ -102,7 +102,6 @@ Operand operator+(Operand x, Operand y) { return Add(x, y); }
 Operand operator-(Operand x, Operand y) { return Sub(x, y); }
 Operand operator*(Operand x, Operand y) { return Mul(x, y); }
 Operand operator/(Operand x, Operand y) { return Div(x, y); }
-Operand operator%(Operand x, Operand y) { return Rem(x, y); }
 Operand operator&(Operand x, Operand y) { return And(x, y); }
 Operand operator|(Operand x, Operand y) { return Or(x, y); }
 Operand operator^(Operand x, Operand y) { return Xor(x, y); }
@@ -130,10 +129,6 @@ Operand Min(Operand x, Operand y) {
 }
 
 Operand And(Operand x, Operand y) { return BinaryOp(note::OpCode::kAnd, x, y); }
-
-Operand Rem(Operand x, Operand y) {
-  return BinaryOp(note::OpCode::kRemainder, x, y);
-}
 
 Operand Or(Operand x, Operand y) { return BinaryOp(note::OpCode::kOr, x, y); }
 
