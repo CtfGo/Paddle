@@ -30,17 +30,17 @@ namespace piano {
 // lower level of piano note IR.
 // "OpDesc" is the operator information.
 // "PianoScope" is an association of a name to operand.
-// "builder" is the operand's NoteBuilder.
+// "builder" is the operand's symbolization::NoteBuilder.
 class PianoOpKernelContext {
  public:
   PianoOpKernelContext(const framework::OpDesc* op_desc, PianoScope* scope,
-                       NoteBuilder* builder)
+                       symbolization::NoteBuilder* builder)
       : op_(op_desc), scope_(scope), builder_(builder) {}
 
   // cannot returning reference to temporary
   std::string Type() const { return op_->Type(); }
 
-  NoteBuilder* Builder() const { return builder_; }
+  symbolization::NoteBuilder* Builder() const { return builder_; }
 
   bool HasInput(const std::string& name) const {
     return op_->Inputs().find(name) != op_->Inputs().end();
@@ -49,8 +49,8 @@ class PianoOpKernelContext {
   Operand GetInput(const std::string& name) const;
 
   // Map the outputs's operand into scope, the operand is created by
-  // NoteBuilder, and be careful the output name must existed in op's
-  // outputs.
+  // symbolization::NoteBuilder, and be careful the output
+  // name must existed in op's outputs.
   void SetOutput(const std::string& name, const Operand& op) const;
 
   const std::unordered_set<note::ElementTypeProto>& DataTypes() const {
@@ -72,7 +72,7 @@ class PianoOpKernelContext {
  private:
   const framework::OpDesc* op_;
   mutable PianoScope* scope_;
-  NoteBuilder* builder_;
+  symbolization::NoteBuilder* builder_;
 };
 
 }  // namespace piano

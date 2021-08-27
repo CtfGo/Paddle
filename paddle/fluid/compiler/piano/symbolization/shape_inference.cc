@@ -14,21 +14,23 @@ limitations under the License. */
 
 #include "paddle/fluid/compiler/piano/symbolization/shape_inference.h"
 #include "paddle/fluid/platform/enforce.h"
-#include "paddle/fluid/platform/errors.h"
 
 namespace paddle {
 namespace piano {
+namespace symbolization {
 
 Shape InferUnaryOpShape(note::OpCode opcode, const Shape& shape) {
   // TODO(CtfGo):
-  // check the element_type of shape is supported for specific opcode
+  // add some checks that verify the element_type of shape is supported
+  // for specific opcodes
   return shape;
 }
 
 Shape InferBinaryOpShape(note::OpCode opcode, const Shape& lhs,
                          const Shape& rhs) {
   // TODO(CtfGo):
-  // check the element_type of lhs and rhs are compatible for specific opcode
+  // add some checks that verify the element_type of the two operands
+  // are compatible for specific opcodes
   return lhs;
 }
 
@@ -82,5 +84,6 @@ Shape InferBroadcastShape(const Shape& operand_shape,
   return {operand_shape.element_type(), out_dimensions};
 }
 
+}  // namespace symbolization
 }  // namespace piano
 }  // namespace paddle

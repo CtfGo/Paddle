@@ -26,6 +26,7 @@ limitations under the License. */
 
 namespace paddle {
 namespace piano {
+namespace symbolization {
 
 class NoteBuilder;
 
@@ -120,5 +121,6 @@ class NoteBuilder {
   std::unordered_set<int64_t> parameter_indexes_;
 };
 
+}  // namespace symbolization
 }  // namespace piano
 }  // namespace paddle

@@ -20,6 +20,7 @@ limitations under the License. */
 
 namespace paddle {
 namespace piano {
+namespace symbolization {
 
 TEST(OperandTest, Basic) {
   Operand op;
@@ -119,5 +120,6 @@ TEST_F(NoteBuilderTest, Build) {
   ASSERT_EQ(Shape(note::F64, {2, 3}), Shape(signature_proto.result()));
 }
 
+}  // namespace symbolization
 }  // namespace piano
 }  // namespace paddle

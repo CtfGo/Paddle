@@ -20,15 +20,26 @@ limitations under the License. */
 
 namespace paddle {
 namespace piano {
+namespace symbolization {
+// We define the resulting shape inference of meta operation
+// with static functions.That is, for a given operation and input shapes,
+// these functions infers what the resulting shape is for the operation,
+// so that users can build computation via the meta_op API
+// without specifying the result type or dimension
 
+// inference for unary operation
 Shape InferUnaryOpShape(note::OpCode opcode, const Shape& shape);
 
+// inference for binary operation
 Shape InferBinaryOpShape(note::OpCode opcode, const Shape& lhs,
                          const Shape& rhs);
 
+// inference for broadcast operation
+Shape InferBinaryOpShape(note::OpCode opcode, const Shape& lhs,
 Shape InferBroadcastShape(const Shape& input_shape,
                           const std::vector<int64_t>& out_dimensions,
                           const std::vector<int64_t>& dimensions_alignment);
 
+}  // namespace symbolization
 }  // namespace piano
 }  // namespace paddle

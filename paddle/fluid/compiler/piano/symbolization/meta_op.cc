@@ -22,6 +22,7 @@ limitations under the License. */
 
 namespace paddle {
 namespace piano {
+namespace symbolization {
 
 Operand Parameter(NoteBuilder* builder, int64_t parameter_index,
                   const Shape& shape, const std::string& name) {
@@ -37,6 +38,8 @@ Operand Parameter(NoteBuilder* builder, int64_t parameter_index,
 
 Operand Broadcast(Operand x, const std::vector<int64_t>& out_dimensions,
                   const std::vector<int64_t>& dimensions_alignment) {
+  // generate a default alignment for ordinary
+  // broadcast operation that is like to numpy
   std::vector<int64_t> to_right_alignment;
   if (dimensions_alignment.empty()) {
     PADDLE_ENFORCE_LE(x.Shape().Rank(), out_dimensions.size(),
@@ -54,9 +57,10 @@ Operand Broadcast(Operand x, const std::vector<int64_t>& out_dimensions,
       dimensions_alignment.empty() ? to_right_alignment : dimensions_alignment;
   auto&& result_shape =
       InferBroadcastShape(x.Shape(), out_dimensions, alignment_array);
+
   note::InstructionProto instr;
   *instr.mutable_shape() = result_shape.ToProto();
-  // fill alignment array to its attribute
+  // fill alignment array to kBroadcast attribute
   auto* attrs_map = instr.mutable_attrs();
   note::AttrValueProto attr_value;
   note::PopulateAttrValueProto(alignment_array, &attr_value);
@@ -135,5 +139,6 @@ Operand Or(Operand x, Operand y) { return BinaryOp(note::OpCode::kOr, x, y); }
 
 Operand Xor(Operand x, Operand y) { return BinaryOp(note::OpCode::kXor, x, y); }
 
+}  // namespace symbolization
 }  // namespace piano
 }  // namespace paddle

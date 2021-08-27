@@ -18,6 +18,7 @@ limitations under the License. */
 
 namespace paddle {
 namespace piano {
+namespace symbolization {
 
 TEST(ShapeInferenceTest, TestInferUnaryOpShape) {
   auto shape = Shape(note::F32, {2, 3});
@@ -62,5 +63,6 @@ TEST(ShapeInferenceTest, TestInferBroadcastShape) {
   ASSERT_EQ(Shape(note::U64, {2, 3, 6}), res2);
 }
 
+}  // namespace symbolization
 }  // namespace piano
 }  // namespace paddle

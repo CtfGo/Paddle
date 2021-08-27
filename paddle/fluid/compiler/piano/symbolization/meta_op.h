@@ -26,6 +26,7 @@ limitations under the License. */
 
 namespace paddle {
 namespace piano {
+namespace symbolization {
 
 class Operand;
 
@@ -33,11 +34,11 @@ class Operand;
 Operand Parameter(NoteBuilder* builder, int64_t parameter_index,
                   const Shape& shape, const std::string& name);
 
-// define a constant containing 'value' with dimension 0 (scalar)
+// a constant instruction passing literal 'value' with dimension 0 (scalar)
 template <typename NativeT>
 Operand ConstantD0(NoteBuilder* builder, NativeT value);
 
-// unary op
+// the following are unary operations
 Operand operator-(Operand x);
 Operand operator~(Operand x);
 Operand Neg(Operand x);
@@ -69,7 +70,7 @@ Operand Not(Operand x);
 Operand Broadcast(Operand x, const std::vector<int64_t>& out_dimensions,
                   const std::vector<int64_t>& dimensions_alignment = {});
 
-// binary op
+// the following are binary operations
 Operand operator+(Operand x, Operand y);
 Operand operator-(Operand x, Operand y);
 Operand operator*(Operand x, Operand y);
@@ -89,14 +90,14 @@ Operand Rem(Operand x, Operand y);
 Operand Or(Operand x, Operand y);
 Operand Xor(Operand x, Operand y);
 
-// define template function on header
+// define template operation function on header
 template <typename NativeT>
 Operand ConstantD0(NoteBuilder* builder, NativeT value) {
   // construct shape
   Shape result_shape(note::NativeToElementTypeProto<NativeT>(), {});
   note::InstructionProto instr;
   *instr.mutable_shape() = result_shape.ToProto();
-  // fill constant attribute
+  // fill attribute of kConstant instruction
   auto* attrs_map = instr.mutable_attrs();
   note::AttrValueProto attr_value;
   note::PopulateAttrValueProto(value, &attr_value);
@@ -105,5 +106,6 @@ Operand ConstantD0(NoteBuilder* builder, NativeT value) {
                                     {});
 }
 
+}  // namespace symbolization
 }  // namespace piano
 }  // namespace paddle

@@ -5,5 +5,5 @@ cc_test(piano_compile_pass_test SRCS piano_compile_pass_tester.cc DEPS piano_com
 cc_library(piano_op_registry SRCS piano_op_registry.cc DEPS framework_proto op_registry note_proto piano_data_description)
 cc_test(piano_op_registry_test SRCS piano_op_registry_test.cc DEPS piano_op_registry operator op_registry)
 
-cc_library(piano_op_kernel_context SRCS piano_op_kernel_context.cc DEPS piano_op_registry proto_desc note_builder)
+cc_library(piano_op_kernel_context SRCS piano_op_kernel_context.cc DEPS piano_op_registry proto_desc piano_symbolization_builder)
 cc_test(piano_op_kernel_context_test SRCS piano_op_kernel_context_test.cc DEPS piano_op_kernel_context op_registry)

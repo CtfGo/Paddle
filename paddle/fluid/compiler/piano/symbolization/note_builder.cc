@@ -19,6 +19,7 @@ limitations under the License. */
 
 namespace paddle {
 namespace piano {
+namespace symbolization {
 
 std::string NameConcatId(const std::string& name, int64_t id,
                          char delim = '.') {
@@ -148,5 +149,6 @@ note::ModuleProto NoteBuilder::Build() {
   return note_module;
 }
 
+}  // namespace symbolization
 }  // namespace piano
 }  // namespace paddle

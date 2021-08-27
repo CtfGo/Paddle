@@ -168,7 +168,7 @@ TEST(PianoContextTest, basic) {
   Operand op_x;
   scope.SetOperand("X", op_x);
 
-  NoteBuilder builder("test_expand");
+  symbolization::NoteBuilder builder("test_expand");
 
   // create PianoOpKernelContext
   PianoOpKernelContext context(op, &scope, &builder);

@@ -20,6 +20,7 @@ limitations under the License. */
 
 namespace paddle {
 namespace piano {
+namespace symbolization {
 
 TEST(MetaOpTest, TestParameter) {
   NoteBuilder builder("test_parameter");
@@ -132,5 +133,6 @@ TEST(MetaOpTest, TestBinaryOp) {
             entry_proto.instructions(3).opcode());
 }
 
+}  // namespace symbolization
 }  // namespace piano
 }  // namespace paddle
