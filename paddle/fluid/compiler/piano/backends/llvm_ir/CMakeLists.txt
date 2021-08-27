@@ -20,5 +20,5 @@ target_link_libraries(nvptx_ir_emitter_test ${LLVM_LIBS})
 cc_library(llvm_compiler SRCS llvm_compiler.cc DEPS nvptx_ir_emitter nvptx_primitive_ir_emitter note_ir llvm)
 cc_library(nvptx_compiler SRCS nvptx_compiler.cc DEPS llvm_compiler llvm dynload_cuda)
 cc_test(nvptx_compiler_test SRCS nvptx_compiler_test.cc
-        DEPS nvptx_compiler note_ir note_builder)
+        DEPS nvptx_compiler note_ir piano_symbolization_builder)
 target_link_libraries(nvptx_compiler_test ${LLVM_LIBS})
