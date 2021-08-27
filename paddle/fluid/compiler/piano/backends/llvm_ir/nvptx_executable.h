@@ -14,29 +14,26 @@
 #pragma once
 
 #include "paddle/fluid/compiler/piano/backends/kernel_executable.h"
-#include "paddle/fluid/compiler/piano/note/module.h"
 
 namespace paddle {
 namespace piano {
-
 namespace backends {
 
-// Compiler is an abstract class for compilation on a particular platform.
-//
-// Compiler ties together note::instruction and codegen (CG) to generate
-// efficient binary code for the target platform.
-//
-// XXCompiler class for a particular device inherit Compiler and
-// overwrite the function Apply.
-
-class Compiler {
+// Nvptx Executable for nvidia jit execution.
+// TODO(sunli) : overwrite the function Run.
+class NvtpxExecutable : public KernelExecutable {
  public:
-  Compiler() = default;
-  virtual ~Compiler() {}
+  NvtpxExecutable(const std::string module_name,
+                  const note::Instruction& note_instruction)
+      : KernelExecutable(note_instruction) {
+    module_name_ = module_name;
+  }
+  void Launch(const ExecutableContext&) override;
 
-  // Compiler will optimize the note::Module with pass and the note::Module will
-  // be updated.
-  virtual KernelExecutableMap Apply(note::Module*) = 0;
+ private:
+  int device_to_execute_{-1};
+  std::string module_name_;
+  CUfunction cu_function_{nullptr};
 };
 
 }  // namespace backends

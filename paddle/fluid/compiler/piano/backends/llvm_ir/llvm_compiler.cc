@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "paddle/fluid/compiler/piano/backends/llvm_ir/llvm_compiler.h"
+#include "paddle/fluid/compiler/piano/backends/llvm_ir/nvptx_ir_emitter.h"
 
 namespace paddle {
 namespace piano {
@@ -24,8 +25,7 @@ KernelExecutableMap LlvmCompiler::Apply(note::Module* note_module) {
 
   // create llvm module
   llvm::LLVMContext context;
-  // TODO(sunli) : set llvm_module name.
-  llvm::Module llvm_module("", context);
+  llvm::Module llvm_module(note_module->name(), context);
 
   // create kernel executor
   KernelExecutableMap kernel_executable_map;
@@ -34,14 +34,28 @@ KernelExecutableMap LlvmCompiler::Apply(note::Module* note_module) {
   ConvertToIr(*note_module, &llvm_module, &kernel_executable_map);
 
   // compiler llvm ir to lowring ir
-  Compile(&llvm_module, &kernel_executable_map);
+  Compile(*note_module, &llvm_module);
 
   return kernel_executable_map;
 }
 
 void LlvmCompiler::ConvertToIr(const note::Module& note_module,
                                llvm::Module* llvm_module,
-                               KernelExecutableMap* kernel_executable_map) {}
+                               KernelExecutableMap* kernel_executable_map) {
+  // ir emitter
+  NvptxIrEmitter nvptx_ir_emitter(llvm_module, kernel_executable_map);
+
+  // get entry function
+  auto& entry_function = note_module.entry_function();
+
+  // get instruction in entry_function
+  auto instructions = entry_function.instructions();
+
+  // generate llvm ir for each instruction
+  for (auto& instr : instructions) {
+    instr.Accept(&nvptx_ir_emitter);
+  }
+}
 
 }  // namespace backends
 }  // namespace piano

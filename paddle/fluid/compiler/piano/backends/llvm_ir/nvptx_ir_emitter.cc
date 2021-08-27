@@ -13,16 +13,35 @@
 // limitations under the License.
 
 #include "paddle/fluid/compiler/piano/backends/llvm_ir/nvptx_ir_emitter.h"
+#include "paddle/fluid/platform/errors.h"
 
 namespace paddle {
 namespace piano {
 namespace backends {
 
-void NvptxIrEmitter::VisitBatchNormGrad(const note::Instruction& instr) {}
-void NvptxIrEmitter::VisitBatchNormInference(const note::Instruction& instr) {}
-void NvptxIrEmitter::VisitBatchNormTraining(const note::Instruction& instr) {}
-void NvptxIrEmitter::VisitConvolution(const note::Instruction& instr) {}
-void NvptxIrEmitter::VisitDot(const note::Instruction& instr) {}
+void NvptxIrEmitter::VisitBatchNormGrad(const note::Instruction& instr) {
+  PADDLE_THROW(
+      platform::errors::Unimplemented("BatchNormGrad is unimplemented!"));
+}
+
+void NvptxIrEmitter::VisitBatchNormInference(const note::Instruction& instr) {
+  PADDLE_THROW(
+      platform::errors::Unimplemented("BatchNormInference is unimplemented!"));
+}
+
+void NvptxIrEmitter::VisitBatchNormTraining(const note::Instruction& instr) {
+  PADDLE_THROW(
+      platform::errors::Unimplemented("BatchNormTraining is unimplemented!"));
+}
+
+void NvptxIrEmitter::VisitConvolution(const note::Instruction& instr) {
+  PADDLE_THROW(
+      platform::errors::Unimplemented("Convolution is unimplemented!"));
+}
+
+void NvptxIrEmitter::VisitDot(const note::Instruction& instr) {
+  PADDLE_THROW(platform::errors::Unimplemented("VisitDot is unimplemented!"));
+}
 
 }  // namespace backends
 }  // namespace piano

@@ -47,7 +47,7 @@ class KernelExecutable {
     Reset(note_instruction);
   }
   virtual ~KernelExecutable();
-  virtual void Run(const ExecutableContext&) = 0;
+  virtual void Launch(const ExecutableContext&) = 0;
 
  public:
   void Reset(const note::Instruction& note_instruction) {

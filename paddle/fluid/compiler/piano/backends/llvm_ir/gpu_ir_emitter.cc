@@ -29,6 +29,7 @@ void GpuIrEmitter::VisitElementwiseBinary(const note::Instruction& instr) {
   auto lhs_type = instr.operand(0).shape().element_type();
   auto rhs_type = instr.operand(1).shape().element_type();
   auto out_type = instr.shape().element_type();
+
   auto func = CreateLLVMFunction(instr.name(), {lhs_type, rhs_type, out_type},
                                  llvm_module_);
 
@@ -82,23 +83,61 @@ void GpuIrEmitter::VisitElementwiseBinary(const note::Instruction& instr) {
 }
 
 // Scalar op
-void GpuIrEmitter::VisitConstant(const note::Instruction& instr) {}
+void GpuIrEmitter::VisitConstant(const note::Instruction& instr) {
+  // TODO(sunli) : Add implement!
+  platform::errors::Unimplemented("Constant is unimplemented!");
+}
 
 // Unary
-void GpuIrEmitter::VisitBroadcast(const note::Instruction& instr) {}
-void GpuIrEmitter::VisitCopy(const note::Instruction& instr) {}
-void GpuIrEmitter::VisitReshape(const note::Instruction& instr) {}
-void GpuIrEmitter::VisitReverse(const note::Instruction& instr) {}
-void GpuIrEmitter::VisitSlice(const note::Instruction& instr) {}
-void GpuIrEmitter::VisitTranspose(const note::Instruction& instr) {}
+void GpuIrEmitter::VisitBroadcast(const note::Instruction& instr) {
+  PADDLE_THROW(platform::errors::Unimplemented("Broadcast is unimplemented!"));
+}
+
+void GpuIrEmitter::VisitCopy(const note::Instruction& instr) {
+  PADDLE_THROW(platform::errors::Unimplemented("Copy is unimplemented!"));
+}
+
+void GpuIrEmitter::VisitReshape(const note::Instruction& instr) {
+  PADDLE_THROW(platform::errors::Unimplemented("Reshape is unimplemented!"));
+}
+
+void GpuIrEmitter::VisitReverse(const note::Instruction& instr) {
+  PADDLE_THROW(platform::errors::Unimplemented("Reverse is unimplemented!"));
+}
+
+void GpuIrEmitter::VisitSlice(const note::Instruction& instr) {
+  PADDLE_THROW(platform::errors::Unimplemented("Slice is unimplemented!"));
+}
+
+void GpuIrEmitter::VisitTranspose(const note::Instruction& instr) {
+  PADDLE_THROW(platform::errors::Unimplemented("Transpose is unimplemented!"));
+}
 
 // Other
-void GpuIrEmitter::VisitSelect(const note::Instruction& instr) {}
-void GpuIrEmitter::VisitConcatenate(const note::Instruction& instr) {}
-void GpuIrEmitter::VisitReduce(const note::Instruction& instr) {}
-void GpuIrEmitter::VisitRng(const note::Instruction& instr) {}
-void GpuIrEmitter::VisitSort(const note::Instruction& instr) {}
-void GpuIrEmitter::VisitTuple(const note::Instruction& instr) {}
+void GpuIrEmitter::VisitSelect(const note::Instruction& instr) {
+  PADDLE_THROW(platform::errors::Unimplemented("Select is unimplemented!"));
+}
+
+void GpuIrEmitter::VisitConcatenate(const note::Instruction& instr) {
+  PADDLE_THROW(
+      platform::errors::Unimplemented("Concatenate is unimplemented!"));
+}
+
+void GpuIrEmitter::VisitReduce(const note::Instruction& instr) {
+  PADDLE_THROW(platform::errors::Unimplemented("Reduce is unimplemented!"));
+}
+
+void GpuIrEmitter::VisitRng(const note::Instruction& instr) {
+  PADDLE_THROW(platform::errors::Unimplemented("Rng is unimplemented!"));
+}
+
+void GpuIrEmitter::VisitSort(const note::Instruction& instr) {
+  PADDLE_THROW(platform::errors::Unimplemented("Sort is unimplemented!"));
+}
+
+void GpuIrEmitter::VisitTuple(const note::Instruction& instr) {
+  PADDLE_THROW(platform::errors::Unimplemented("Tuple is unimplemented!"));
+}
 
 }  // namespace backends
 }  // namespace piano
