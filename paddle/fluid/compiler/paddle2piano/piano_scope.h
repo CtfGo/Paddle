@@ -84,7 +84,7 @@ class PianoScope {
   }
 
   // return the operand in local scope if founded.
-  Operand GetLocalOperand(const std::string& name) const {
+  symbolization::Operand GetLocalOperand(const std::string& name) const {
     PADDLE_ENFORCE_EQ(
         HasLocalOperand(name), true,
         platform::errors::NotFound("Operand %s not founded in scope %p",
@@ -93,7 +93,7 @@ class PianoScope {
   }
 
   // return the operand in local scope or its ancestor scope if founded
-  Operand GetOperand(const std::string& name) const {
+  symbolization::Operand GetOperand(const std::string& name) const {
     if (HasLocalOperand(name)) {
       return operands_.at(name);
     }
@@ -104,7 +104,7 @@ class PianoScope {
   }
 
   // insert the operand into local scope
-  void SetOperand(const std::string& name, const Operand& op) {
+  void SetOperand(const std::string& name, const symbolization::Operand& op) {
     PADDLE_ENFORCE_EQ(HasOperand(name), false,
                       platform::errors::AlreadyExists(
                           "Operand %s already existed in scope %p.",
@@ -125,7 +125,7 @@ class PianoScope {
 
   DISABLE_COPY_AND_ASSIGN(PianoScope);
 
-  std::unordered_map<std::string, Operand> operands_;
+  std::unordered_map<std::string, symbolization::Operand> operands_;
 
   const PianoScope* parent_;
   mutable std::vector<std::unique_ptr<PianoScope>> kids_;

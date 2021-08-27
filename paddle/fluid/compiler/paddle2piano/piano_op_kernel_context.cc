@@ -44,7 +44,8 @@ framework::Attribute PianoOpKernelContext::GetAttr(
   return op_->GetAttr(name);
 }
 
-Operand PianoOpKernelContext::GetInput(const std::string& name) const {
+symbolization::Operand PianoOpKernelContext::GetInput(
+    const std::string& name) const {
   PADDLE_ENFORCE_EQ(
       HasInput(name), true,
       platform::errors::NotFound("Input %s is not found in op %s.",
@@ -53,7 +54,7 @@ Operand PianoOpKernelContext::GetInput(const std::string& name) const {
 }
 
 void PianoOpKernelContext::SetOutput(const std::string& name,
-                                     const Operand& op) const {
+                                     const symbolization::Operand& op) const {
   PADDLE_ENFORCE_EQ(
       op_->HasOutput(name), true,
       platform::errors::NotFound("Output %s is not found in op %s.",

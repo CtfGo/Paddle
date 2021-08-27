@@ -66,7 +66,7 @@ std::unordered_set<note::ElementTypeProto> TestDatatypes() {
   return supported_types;
 }
 
-bool TestFilterFunc(Operand* op) {
+bool TestFilterFunc(symbolization::Operand* op) {
   // TODO(jiangcheng05) : fill some change of Operand
   return true;
 }

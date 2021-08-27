@@ -46,12 +46,13 @@ class PianoOpKernelContext {
     return op_->Inputs().find(name) != op_->Inputs().end();
   }
 
-  Operand GetInput(const std::string& name) const;
+  symbolization::Operand GetInput(const std::string& name) const;
 
   // Map the outputs's operand into scope, the operand is created by
   // symbolization::NoteBuilder, and be careful the output
   // name must existed in op's outputs.
-  void SetOutput(const std::string& name, const Operand& op) const;
+  void SetOutput(const std::string& name,
+                 const symbolization::Operand& op) const;
 
   const std::unordered_set<note::ElementTypeProto>& DataTypes() const {
     return PianoOpRegistry::PianoOpDataTypes(Type());
