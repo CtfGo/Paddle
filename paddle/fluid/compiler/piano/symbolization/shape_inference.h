@@ -35,7 +35,6 @@ Shape InferBinaryOpShape(note::OpCode opcode, const Shape& lhs,
                          const Shape& rhs);
 
 // inference for broadcast operation
-Shape InferBinaryOpShape(note::OpCode opcode, const Shape& lhs,
 Shape InferBroadcastShape(const Shape& input_shape,
                           const std::vector<int64_t>& out_dimensions,
                           const std::vector<int64_t>& dimensions_alignment);
