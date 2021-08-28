@@ -126,7 +126,7 @@ TEST(NvptxCompiler, Apply) {
     c_shape->add_dimensions(32);
 
     // build note module
-    std::vector<Operand> ops;
+    std::vector<symbolization::Operand> ops;
     ops.push_back(note_builder.AppendInstruction(std::move(a_proto),
                                                  note::OpCode::kConstant, {}));
     ops.push_back(note_builder.AppendInstruction(std::move(b_proto),
