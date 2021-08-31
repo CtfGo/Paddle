@@ -38,8 +38,7 @@ Operand Parameter(NoteBuilder* builder, int64_t parameter_index,
 
 Operand Broadcast(Operand x, const std::vector<int64_t>& out_dimensions,
                   const std::vector<int64_t>& dimensions_alignment) {
-  // generate a default alignment for ordinary
-  // broadcast operation that is like to numpy
+  // generate a default alignment for numpy's like broadcast operation
   std::vector<int64_t> to_right_alignment;
   if (dimensions_alignment.empty()) {
     PADDLE_ENFORCE_LE(x.Shape().Rank(), out_dimensions.size(),
@@ -48,6 +47,7 @@ Operand Broadcast(Operand x, const std::vector<int64_t>& out_dimensions,
     to_right_alignment.resize(x.Shape().Rank());
     std::iota(to_right_alignment.begin(), to_right_alignment.end(), 0);
     auto gap_len = out_dimensions.size() - x.Shape().Rank();
+    // original operand is aligned to the rightmost of out_dimensions
     std::transform(to_right_alignment.begin(), to_right_alignment.end(),
                    to_right_alignment.begin(),
                    [gap_len](const auto& x) { return x + gap_len; });
@@ -60,7 +60,7 @@ Operand Broadcast(Operand x, const std::vector<int64_t>& out_dimensions,
 
   note::InstructionProto instr;
   *instr.mutable_shape() = result_shape.ToProto();
-  // fill alignment array to kBroadcast attribute
+  // fill the alignment array to kBroadcast attribute
   auto* attrs_map = instr.mutable_attrs();
   note::AttrValueProto attr_value;
   note::PopulateAttrValueProto(alignment_array, &attr_value);

@@ -27,16 +27,34 @@ limitations under the License. */
 namespace paddle {
 namespace piano {
 namespace symbolization {
+// Following functions are the public API interface of meta operation.
+// Generally speaking, an operation takes a few operands (one or more,
+// may also be 0) and attributes as input, and return a resulting operand.
 
 class Operand;
-
 // initial instructions to retrieve data passed to the function
 Operand Parameter(NoteBuilder* builder, int64_t parameter_index,
                   const Shape& shape, const std::string& name);
 
-// a constant instruction passing literal 'value' with dimension 0 (scalar)
+// a constant instruction passing literal 'value' with 0-D array(scalar)
+// `builder`: NoteBuilder of current module
+// `value`: The scalar value. users should explicitly specifiy the
+//     data type when the value may be obscure and deduced to
+//     another compatible type
 template <typename NativeT>
-Operand ConstantD0(NoteBuilder* builder, NativeT value);
+Operand ConstantD0(NoteBuilder* builder, NativeT value) {
+  // construct shape
+  Shape result_shape(note::NativeToElementTypeProto<NativeT>(), {});
+  note::InstructionProto instr;
+  *instr.mutable_shape() = result_shape.ToProto();
+  // fill attribute of kConstant instruction
+  auto* attrs_map = instr.mutable_attrs();
+  note::AttrValueProto attr_value;
+  note::PopulateAttrValueProto(value, &attr_value);
+  (*attrs_map)[note::kConstantValue] = attr_value;
+  return builder->AppendInstruction(std::move(instr), note::OpCode::kConstant,
+                                    {});
+}
 
 // the following are unary operations
 Operand operator-(Operand x);
@@ -53,20 +71,22 @@ Operand Not(Operand x);
 //    which dimensions of the output array are aligned with the opeand
 //    dimensions.
 //
-// `dimensions_alignment` are the dimensions to be broadcasting into, i.e., the
-// i'th dimension of the operand is mapped to the dimensions_alignment[i]'th
-// dimension of the output. This also requires that the i'th input dimension is
-// either 1 or is the same as the output dimension it's broadcasting into.
-//
-// For example, say operand = {1, 2}, i.e., a 1D tensor in shape s32[2] and
-// expect the output shape is s32[2,2]:
-// - Specifying {1} as dimensions_alignment will generate output
-//   {{1, 2},
-//    {1, 2}}
-// - On the other hand, specifying {0} as dimensions_alignment
-//   will generate output
-//   {{1 , 1},
-//    {2 , 2}}
+// `x`: original operand
+// `out_dimensions`: each dimension size of the result operand
+// `dimensions_alignment`: the dimensions to be broadcasting into.
+//      i.e., the i'th dimension of the operand is mapped to
+//      the dimensions_alignment[i]'th dimension of the output.
+//      This also requires that the i'th input dimension is
+//      either 1 or is the same as the output dimension it's broadcasting into.
+//      For example, say operand = {1, 2}, i.e., a 1D tensor in shape s32[2] and
+//      expect the output shape is s32[2,2]:
+//      - Specifying {1} as dimensions_alignment will generate output
+//        {{1, 2},
+//         {1, 2}}
+//      - On the other hand, specifying {0} as dimensions_alignment
+//        will generate output
+//        {{1 , 1},
+//         {2 , 2}}
 Operand Broadcast(Operand x, const std::vector<int64_t>& out_dimensions,
                   const std::vector<int64_t>& dimensions_alignment = {});
 
@@ -87,22 +107,6 @@ Operand Min(Operand x, Operand y);
 Operand And(Operand x, Operand y);
 Operand Or(Operand x, Operand y);
 Operand Xor(Operand x, Operand y);
-
-// define template operation function on header
-template <typename NativeT>
-Operand ConstantD0(NoteBuilder* builder, NativeT value) {
-  // construct shape
-  Shape result_shape(note::NativeToElementTypeProto<NativeT>(), {});
-  note::InstructionProto instr;
-  *instr.mutable_shape() = result_shape.ToProto();
-  // fill attribute of kConstant instruction
-  auto* attrs_map = instr.mutable_attrs();
-  note::AttrValueProto attr_value;
-  note::PopulateAttrValueProto(value, &attr_value);
-  (*attrs_map)[note::kConstantValue] = attr_value;
-  return builder->AppendInstruction(std::move(instr), note::OpCode::kConstant,
-                                    {});
-}
 
 }  // namespace symbolization
 }  // namespace piano

@@ -21,9 +21,9 @@ limitations under the License. */
 namespace paddle {
 namespace piano {
 namespace symbolization {
-// We define the resulting shape inference of meta operation
-// with static functions.That is, for a given operation and input shapes,
-// these functions infers what the resulting shape is for the operation,
+// Following functions are the resulting shape inference of meta operation.
+// That is, for a given operation and input shapes, these functions
+// infers what the resulting shape is for the operation,
 // so that users can build computation via the meta_op API
 // without specifying the result type or dimension
 
