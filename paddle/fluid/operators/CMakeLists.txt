@@ -159,7 +159,8 @@ if (WITH_ASCEND_CL)
 endif()
 
 if (WITH_CINN)
-  op_library(cinn_launch_op SRCS cinn_launch_op.cc DEPS cinn ${OP_HEADER_DEPS})
+  cc_library(cinn_launch_op_helper SRCS cinn_launch_op_helper.cc DEPS operator cinn)
+  op_library(cinn_launch_op SRCS cinn_launch_op.cc DEPS cinn_launch_op_helper cinn ${OP_HEADER_DEPS})
   cc_test(cinn_launch_op_test SRCS cinn_launch_op_test.cc DEPS cinn_launch_op)
 endif()
 
