@@ -13,15 +13,16 @@
 // limitations under the License.
 
 #include "paddle/fluid/operators/cinn_launch_op_helper.h"
+#include "paddle/fluid/platform/enforce.h"
 
 namespace paddle {
 namespace operators {
 namespace details {
 
-static Name2LoDTensor GetTensors(const Scope& scope,
-                                 const std::vector<std::string>& var_names) {
-  Name2LoDTensor name2tensor;
-  for (const auto& var_name : var_names) {
+Name2ConstTensor GetConstTensors(
+    const Scope& scope, const std::vector<std::string>& variable_names) {
+  Name2ConstTensor name2tensor;
+  for (const auto& var_name : variable_names) {
     auto* var_ptr = scope.FindVar(var_name);
     PADDLE_ENFORCE_NOT_NULL(
         var_ptr, platform::errors::NotFound("Variable(%s) not found in Scope.",
@@ -37,7 +38,7 @@ static Name2LoDTensor GetTensors(const Scope& scope,
   return name2tensor;
 }
 
-static Name2CinnTensor GetCompiledTensors(
+Name2CinnTensor GetCompiledTensors(
     const std::vector<std::string>& paddle_var_names,
     const CinnScope& compiled_scope,
     const std::unordered_map<std::string, std::string>& paddle2cinn_varmap) {
@@ -46,7 +47,8 @@ static Name2CinnTensor GetCompiledTensors(
     PADDLE_ENFORCE_GT(paddle2cinn_varmap.count(pd_name), 0,
                       platform::errors::NotFound(
                           "the corresponding compiled one of variable(%s) "
-                          "not found in compilation result." pd_name));
+                          "not found in compilation result.",
+                          pd_name));
     const auto& cinn_name = paddle2cinn_varmap.at(pd_name);
     PADDLE_ENFORCE_NOT_NULL(
         compiled_scope.FindVar(cinn_name),
@@ -57,8 +59,8 @@ static Name2CinnTensor GetCompiledTensors(
   return name2tensor;
 }
 
-static void CheckTensorEquivalent(const Name2LoDTensor& paddle_tensors,
-                                  const Name2CinnTensor& compiled_tensors) {
+void CheckTensorEquivalent(const Name2ConstTensor& paddle_tensors,
+                           const Name2CinnTensor& compiled_tensors) {
   for (const auto& name2tensor : paddle_tensors) {
     const auto& pd_name = name2tensor.first;
     const auto* paddle_tensor = name2tensor.second;
@@ -73,21 +75,20 @@ static void CheckTensorEquivalent(const Name2LoDTensor& paddle_tensors,
                           "not found in compilation result.",
                           pd_name));
     const auto& cinn_tensor = compiled_tensors.at(pd_name);
-    auto compiled_dim = framework::make_ddim(cinn_tensor.shape().data());
+    auto compiled_dim = framework::make_ddim(cinn_tensor->shape().data());
 
     PADDLE_ENFORCE_EQ(paddle_tensor->dims(), compiled_dim,
                       platform::errors::InvalidArgument(
                           "The tensor dimension in variable(%s) "
                           "is not equivalent, paddle is [%s] "
                           "but compiled result is [%s].",
-                          pd_name, paddle_tensor.dims(), compiled_dim));
+                          pd_name, paddle_tensor->dims(), compiled_dim));
     // TODO(CtfGo): check the underlying data type is equivalent
   }
 }
 
-static void InitializeOutputVar(const Scope& scope,
-                                const platform::Place& place,
-                                const Name2CinnTensor& compiled_tensors) {
+void InitializeOutputVar(const Scope& scope, const platform::Place& place,
+                         const Name2CinnTensor& compiled_tensors) {
   for (const auto& name2tensor : compiled_tensors) {
     const auto& pd_name = name2tensor.first;
     const auto& cinn_tensor = name2tensor.second;
@@ -97,16 +98,16 @@ static void InitializeOutputVar(const Scope& scope,
                                             pd_name));
     auto* paddle_tensor = var_ptr->GetMutable<LoDTensor>();
     if (!paddle_tensor->IsInitialized()) {
-      paddle_tensor->Resize(framework::make_ddim(cinn_tensor.shape().data()));
+      paddle_tensor->Resize(framework::make_ddim(cinn_tensor->shape().data()));
       // TODO(CtfGo): support mutable corresponding c++ type
-      // with the compilation type
+      //              with the compilation type
       paddle_tensor->mutable_data<float>(place);
       VLOG(2) << "Variable(%s) is initialized using compilation result";
     }
   }
 }
 
-static std::vector<std::string> SeperateTempVar(
+std::vector<std::string> SeperateTempVar(
     const CinnScope& compiled_scope,
     const std::unordered_map<std::string, std::string>& paddle2cinn_varmap,
     const std::vector<std::string>& input_var_names,
@@ -114,11 +115,11 @@ static std::vector<std::string> SeperateTempVar(
   std::unordered_set<std::string> all_paddle_names, all_cinn_names;
   for_each(paddle2cinn_varmap.begin(), paddle2cinn_varmap.end(),
            [&all_paddle_names](const auto& name_pd2cinn) {
-             all_paddle_names.insert(name2pd2cinn.first);
+             all_paddle_names.insert(name_pd2cinn.first);
            });
   auto cinn_names_view = compiled_scope.var_names();
   for_each(cinn_names_view.begin(), cinn_names_view.end(),
-           [&all_cinn_names](const auto* str_view) {
+           [&all_cinn_names](const auto& str_view) {
              all_cinn_names.emplace(str_view.data(), str_view.size());
            });
 
@@ -128,7 +129,7 @@ static std::vector<std::string> SeperateTempVar(
                           "The corresponding compiled one of variable(%s) "
                           "not found in compilation result.",
                           pd_name));
-    PADDLE_ENFORCE_EQ(all_cinn_names.erase(paddle2cinn_varmap.at(pd_name));
+    PADDLE_ENFORCE_EQ(all_cinn_names.erase(paddle2cinn_varmap.at(pd_name)), 1,
                       platform::errors::NotFound(
                           "Variable(%s) not found in compiled scope", pd_name));
   };
@@ -144,9 +145,9 @@ static std::vector<std::string> SeperateTempVar(
   return {all_cinn_names.begin(), all_cinn_names.end()};
 }
 
-static void InitializeTempVar(const std::vector<std::string>& variable_names,
-                              const CinnScope& compiled_scope,
-                              const platform::Place& place, Scope* temp_scope) {
+void InitializeTempVar(const std::vector<std::string>& variable_names,
+                       const CinnScope& compiled_scope,
+                       const platform::Place& place, Scope* temp_scope) {
   for (const auto& var_name : variable_names) {
     PADDLE_ENFORCE_NOT_NULL(
         compiled_scope.FindVar(var_name),
@@ -157,7 +158,7 @@ static void InitializeTempVar(const std::vector<std::string>& variable_names,
     // use the same variable name defined by CINN
     auto* var_ptr = temp_scope->Var(var_name);
     auto* paddle_tensor = var_ptr->GetMutable<LoDTensor>();
-    auto compiled_ddim = framework::make_ddim(cinn_tensor.shape().data());
+    auto compiled_ddim = framework::make_ddim(cinn_tensor->shape().data());
     paddle_tensor->Resize(compiled_ddim);
     // TODO(CtfGo): support mutable corresponding c++ type with the compilation
     // type
@@ -167,21 +168,26 @@ static void InitializeTempVar(const std::vector<std::string>& variable_names,
   }
 }
 
-static void SharePaddleTensorWithCinnBuffer(const LoDTensor* paddle_tensor,
-                                            cinn_buffer_t* cinn_buffer) {
-  cinn_buffer->resize(reinterpret_cast<const cinn_dimension_t*>(
-      paddle_tensor->dims().Get(), paddle_tensor->dims().size()));
-  cinn_buffer->memory = reinterpret_cast<uint8_t*>(paddle_tensor.data<float>());
+void SharePaddleTensorWithCinnBuffer(LoDTensor* paddle_tensor,
+                                     cinn_buffer_t* cinn_buffer) {
+  cinn_buffer->resize(
+      reinterpret_cast<const cinn_dimension_t*>(paddle_tensor->dims().Get()),
+      paddle_tensor->dims().size());
+  cinn_buffer->memory =
+      reinterpret_cast<uint8_t*>(paddle_tensor->data<float>());
 }
 
-static void AppendExecutionArguments(
-    const Name2LoDTensor& paddle_tensors,
+void AppendExecutionArguments(
+    const Scope& scope, const std::vector<std::string>& variable_names,
     const std::unordered_map<std::string, std::string>& paddle2cinn_varmap,
     std::map<std::string, cinn_pod_value_t>* name2argument,
     std::vector<std::unique_ptr<cinn_buffer_t>>* hold_buffers) {
-  for (const auto& name2tensor : paddle_tensors) {
-    const auto& pd_name = name2tensor.first;
-    const auto* paddle_tensor = name2tensor.second;
+  for (const auto& pd_name : variable_names) {
+    auto* var_ptr = scope.FindVar(pd_name);
+    PADDLE_ENFORCE_NOT_NULL(
+        var_ptr, platform::errors::NotFound("Variable(%s) not found in Scope.",
+                                            pd_name));
+    auto* paddle_tensor = var_ptr->GetMutable<LoDTensor>();
     // if not found a paddle variable in the map,
     // which means it is a temporary variable extra added,
     // so the paddle name is same with cinn
